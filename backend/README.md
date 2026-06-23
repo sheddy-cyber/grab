@@ -1,92 +1,63 @@
-# Clippd Backend Service
+# grab am Backend Service
 
-This is a Python Flask backend service that extracts video URLs from Twitter/X tweets using yt-dlp.
+Flask service that uses `yt-dlp` to extract direct download URLs for supported videos.
 
-## Prerequisites
+## Supported Sources
 
-- Python 3.8 or higher
-- pip (Python package manager)
+- Twitter/X status videos
+- YouTube videos
+- YouTube Shorts
 
 ## Installation
 
-1. Navigate to the backend directory:
 ```bash
 cd backend
-```
-
-2. Install the required dependencies:
-```bash
 pip install -r requirements.txt
 ```
 
-## Running the Backend
+## Running
 
-### Local Development
-
-Run the server:
 ```bash
 python app.py
 ```
 
-The server will start on `http://0.0.0.0:8000`
+The server listens on `http://0.0.0.0:8000`.
 
-### Network Access (for Android App)
+For a physical Android device, use your computer's LAN IP in the Android app. For the Android emulator, use `10.0.2.2`.
 
-To make the backend accessible from your Android device:
+## API
 
-1. **Find your local IP address**:
-   - Windows: Open Command Prompt and run `ipconfig`
-   - Look for the IPv4 Address (e.g., 192.168.1.100)
+### `GET /extract`
 
-2. **Run the server**:
-```bash
-python app.py
+Query parameters:
+
+- `url`: Twitter/X or YouTube video URL.
+
+Example:
+
+```text
+http://localhost:8000/extract?url=https://www.youtube.com/shorts/abcD_123-xy
 ```
 
-3. **Update Android app configuration**:
-   - Open `DownloadService.kt`
-   - Update the BACKEND_URL:
-   ```kotlin
-   const val BACKEND_URL = "http://YOUR_IP:8000/extract?url="
-   ```
-   - Replace `YOUR_IP` with your actual IP address
+Response:
 
-## API Endpoints
-
-### Extract Video URL
-
-**Endpoint**: `GET /extract`
-
-**Query Parameters**:
-- `url`: The Twitter/X video URL
-
-**Example Request**:
-```
-http://192.168.1.100:8000/extract?url=https://twitter.com/user/status/1234567890
-```
-
-**Example Response**:
 ```json
 {
-  "download_url": "https://video.twimg.com/ext_tw_video/1234567890/pu/vid/720x1280/...",
-  "title": "Amazing video tweet",
+  "download_url": "https://...",
+  "title": "video title",
   "duration": 30,
-  "thumbnail": "https://pbs.twimg.com/ext_tw_video_thumb/1234567890/pu/img/..."
+  "thumbnail": "https://...",
+  "ext": "mp4",
+  "mime_type": "video/mp4",
+  "headers": {},
+  "platform": "youtube"
 }
 ```
 
-**Error Response**:
-```json
-{
-  "error": "Invalid Twitter/X URL"
-}
-```
+The Android app downloads one direct URL, so the backend prefers progressive formats that already contain both audio and video.
 
-### Health Check
+### `GET /health`
 
-**Endpoint**: `GET /health`
-
-**Response**:
 ```json
 {
   "status": "healthy"
@@ -95,90 +66,33 @@ http://192.168.1.100:8000/extract?url=https://twitter.com/user/status/1234567890
 
 ## Testing
 
-Test the backend using curl or a web browser:
-
 ```bash
-curl "http://localhost:8000/extract?url=https://twitter.com/user/status/1234567890"
+curl "http://localhost:8000/health"
+curl "http://localhost:8000/extract?url=https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+curl "http://localhost:8000/extract?url=https://x.com/example/status/1234567890"
 ```
-
-Or use a tool like Postman to test the API.
 
 ## Troubleshooting
 
-### Connection Refused
+- Keep `yt-dlp` updated; YouTube and Twitter/X extraction rules change often.
+- Some age-restricted, private, region-locked, or login-gated videos may require cookies.
+- Make sure your firewall allows inbound connections on port `8000` for physical devices.
+- Confirm the phone and computer are on the same network and not isolated by VPN settings.
 
-- Make sure the backend is running
-- Check that you're using the correct IP address
-- Ensure your firewall allows connections on port 8000
+## Optional Cookies
 
-### yt-dlp Errors
+For content that requires login:
 
-- yt-dlp may need updates if Twitter changes their API
-- Update yt-dlp: `pip install --upgrade yt-dlp`
-- Some videos may be age-restricted or require authentication
+1. Export browser cookies to `cookies.txt`.
+2. Save the file in `backend/`.
+3. Add this to `ydl_opts` in `app.py`:
 
-### CORS Issues
-
-- The backend includes CORS support, but if you encounter CORS issues, check your browser console for specific errors
-
-## Deployment Options
-
-### Local Network
-
-Run on your local machine and access from devices on the same network.
-
-### Cloud Deployment
-
-Deploy to a cloud service like:
-- Heroku
-- AWS Lambda
-- Google Cloud Functions
-- DigitalOcean
-- Railway
-
-For cloud deployment, you'll need to:
-1. Create a requirements.txt file
-2. Configure the cloud service to run Flask
-3. Set up proper environment variables
-4. Update the Android app with the cloud URL
-
-## Security Considerations
-
-- This backend does not include authentication
-- For production use, add API keys or rate limiting
-- Consider using HTTPS for production deployments
-- Implement input validation and sanitization
-
-## Advanced Configuration
-
-### Using Cookies for Authentication
-
-Some Twitter content may require authentication. You can provide cookies:
-
-1. Export cookies from your browser
-2. Save as `cookies.txt` in the backend directory
-3. Update the cookiefile path in `app.py`:
 ```python
 'cookiefile': 'cookies.txt',
 ```
 
-### Custom Output Format
+## Production Notes
 
-Modify the `ydl_opts` dictionary in `app.py` to change video quality or format:
-
-```python
-ydl_opts = {
-    'format': 'worst',  # Lowest quality
-    # or
-    'format': 'best[height<=720]',  # Best quality up to 720p
-}
-```
-
-## Support
-
-For issues with yt-dlp, check their documentation: https://github.com/yt-dlp/yt-dlp
-
-For backend issues, ensure:
-- Python version is compatible
-- All dependencies are installed
-- The URL is a valid Twitter/X video URL
+- Add authentication or rate limiting before exposing the backend publicly.
+- Use HTTPS in production.
+- Run behind a production WSGI server instead of Flask debug mode.

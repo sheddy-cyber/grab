@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Starting Clippd Backend Service..."
+echo "Starting grab am Backend Service..."
 echo "Installing dependencies..."
 pip install -r requirements.txt
 

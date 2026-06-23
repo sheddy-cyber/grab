@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.clippd">
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
@@ -11,7 +10,6 @@
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
@@ -20,18 +18,27 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Clippd"
+        android:theme="@style/Theme.GrabAm"
         android:requestLegacyExternalStorage="true"
+        android:usesCleartextTraffic="true"
         tools:targetApi="31">
         
         <activity
-            android:name="com.clippd.MainActivity"
+            android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.Clippd">
+            android:theme="@style/Theme.GrabAm">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ShareActivity"
+            android:exported="true"
+            android:theme="@style/Theme.GrabAm.Transparent"
+            android:excludeFromRecents="true"
+            android:noHistory="true">
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -39,18 +46,22 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".quicksettings.TileDownloadActivity"
+            android:exported="true"
+            android:theme="@style/Theme.GrabAm.Transparent"
+            android:excludeFromRecents="true"
+            android:noHistory="true" />
+
         <service
-            android:name="com.clippd.service.DownloadService"
+            android:name=".service.DownloadService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Video download service" />
         </service>
 
-        <tile
-            android:name="com.clippd.quicksettings.DownloadTile"
+        <service
+            android:name=".quicksettings.DownloadTile"
             android:icon="@drawable/ic_download"
             android:label="@string/quick_settings_tile_label"
             android:exported="true"
@@ -58,7 +69,7 @@
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
-        </tile>
+        </service>
 
     </application>
 

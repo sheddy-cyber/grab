@@ -1,190 +1,130 @@
-# Clippd - Twitter Video Downloader
+# grab am - Social Video Downloader
 
-An Android app that allows users to download Twitter/X videos without leaving the app (the Twitter app, that is).
+An Android app for downloading supported social media videos from the app, the Android share sheet, or a Quick Settings tile.
+
+## Supported Sources
+
+- Twitter/X status videos
+- YouTube videos
+- YouTube Shorts
 
 ## Features
 
-- **Direct Download**: Paste a Twitter/X video URL in the app and download
-- **Share Integration**: Use the native Android share menu to share a tweet directly to Clippd
-- **Quick Settings Tile**: Add a tile to your notification shade for quick access
-- **Background Downloads**: Downloads continue even when the app is closed
-- **Gallery Integration**: Downloaded videos are saved directly to your device's gallery
+- **Direct Download**: Paste a supported video URL in the app and download it.
+- **Share Integration**: Share a Twitter/X or YouTube link to grab am from another app.
+- **Quick Settings Tile**: Copy a supported URL, tap the tile, and start the download.
+- **Background Downloads**: Downloads run through a foreground service with progress notifications.
+- **Gallery Integration**: Downloads are saved to `Movies/grab am`.
 
 ## Quick Start
 
-For a complete setup guide, see [CONFIG.md](CONFIG.md).
+For setup details, see [CONFIG.md](CONFIG.md).
 
-## Setup Instructions
+### Android Project
 
-### Prerequisites
+1. Open Android Studio.
+2. Import the project from the `android` directory.
+3. Ensure `android/local.properties` contains your Android SDK path.
+4. Sync Gradle files.
+5. Build and run the app.
 
-- Android Studio with Android SDK installed
-- Python 3.8+ (for backend)
-- A physical Android device or emulator
+### Backend Service
 
-### 1. Android Project Setup
+The backend in `backend/` uses `yt-dlp` to extract direct media URLs.
 
-1. Open Android Studio
-2. Import the project from the `android` directory
-3. Copy `local.properties.example` to `local.properties` and add your Android SDK path
-4. Sync Gradle files
-5. Build and run the app
-
-### 2. Backend Service Setup
-
-A complete backend service implementation is provided in the `backend/` directory.
-
-#### Quick Start
-
-1. **Navigate to the backend directory**:
 ```bash
 cd backend
-```
-
-2. **Install dependencies**:
-```bash
 pip install -r requirements.txt
-```
-
-3. **Start the backend server**:
-```bash
-# On Windows
-start.bat
-
-# On Linux/Mac
-chmod +x start.sh
-./start.sh
-
-# Or directly
 python app.py
 ```
 
-The backend will start on `http://0.0.0.0:8000`
+The backend starts on `http://0.0.0.0:8000`.
 
-4. **Find your local IP address**:
-- Windows: Open Command Prompt and run `ipconfig`
-- Look for the IPv4 Address (e.g., `192.168.1.100`)
+Update `DownloadService.BACKEND_URL` in `android/app/src/main/java/com/grabam/service/DownloadService.kt` so the Android device can reach your backend:
 
-5. **Configure the Android app**:
-- Open `DownloadService.kt`
-- Update the `BACKEND_URL`:
 ```kotlin
 const val BACKEND_URL = "http://192.168.1.100:8000/extract?url="
 ```
-- Replace `192.168.1.100` with your actual IP address
 
-For detailed backend setup instructions, see [backend/README.md](backend/README.md)
+Use `10.0.2.2` when testing from the Android emulator against a backend running on your computer.
 
-#### Backend Requirements
+## Backend Contract
 
-The backend should:
-- Accept a Twitter URL as a query parameter
-- Extract the actual video URL from the tweet
-- Return JSON in this format: `{"download_url": "direct_video_url", "title": "video_title"}`
+`GET /extract?url=<encoded-url>` accepts a Twitter/X or YouTube URL and returns:
 
-The provided backend uses `yt-dlp` for reliable video extraction from Twitter/X.
+```json
+{
+  "download_url": "https://...",
+  "title": "video title",
+  "duration": 30,
+  "thumbnail": "https://...",
+  "ext": "mp4",
+  "mime_type": "video/mp4",
+  "headers": {},
+  "platform": "youtube"
+}
+```
+
+The Android client downloads one direct media URL, so the backend prefers single-file formats that already include both video and audio. Keep `yt-dlp` current because YouTube and Twitter/X extraction can change.
 
 ## Permissions
 
-The app requires the following permissions:
-
-- `INTERNET`: To fetch video URLs and download files
-- `WRITE_EXTERNAL_STORAGE` (Legacy): To save videos to storage
-- `READ_MEDIA_VIDEO`: To access video files on Android 13+
-- `FOREGROUND_SERVICE`: To show download progress in notifications
-- `POST_NOTIFICATIONS`: To show download notifications
+- `INTERNET`: Fetch extraction metadata and download files.
+- `WRITE_EXTERNAL_STORAGE` and `READ_EXTERNAL_STORAGE`: Legacy storage access.
+- `READ_MEDIA_VIDEO`: Android 13+ media access.
+- `FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_DATA_SYNC`: Download progress service.
+- `POST_NOTIFICATIONS`: Download notifications on Android 13+.
 
 ## Usage
 
-### Method 1: Share Menu
-1. Open Twitter/X
-2. Find a video tweet
-3. Tap the share button
-4. Select "Clippd" from the share menu
-5. The download will start automatically
+### Share Menu
 
-### Method 2: Quick Settings Tile
-1. Add the Clippd tile to your quick settings
-2. Copy a Twitter video URL to your clipboard
-3. Pull down the notification shade
-4. Tap the Clippd tile
-5. The download will start automatically
+1. Open Twitter/X or YouTube.
+2. Share a video, status, or Shorts link.
+3. Select grab am.
+4. The download starts automatically.
 
-### Method 3: Direct Paste
-1. Open the Clippd app
-2. Paste the Twitter video URL
-3. Tap "Download"
-4. The download will start
+### Quick Settings Tile
 
-## Development
+1. Add the grab am tile to Quick Settings.
+2. Copy a supported video URL.
+3. Tap the grab am tile.
+4. The download starts from the clipboard link.
 
-### Project Structure
+### Direct Paste
 
-```
+1. Open grab am.
+2. Paste a supported video URL.
+3. Tap **Download**.
+
+## Project Structure
+
+```text
 android/
-├── app/
-│   ├── src/
-│   │   └── main/
-│   │       ├── java/com/clippd/
-│   │       │   ├── MainActivity.kt          # Main UI
-│   │       │   ├── service/
-│   │       │   │   └── DownloadService.kt   # Download service
-│   │       │   ├── quicksettings/
-│   │       │   │   └── DownloadTile.kt      # Quick settings tile
-│   │       │   └── utils/
-│   │       │       └── NotificationHelper.kt # Notification management
-│   │       ├── res/                          # Resources
-│   │       └── AndroidManifest.xml
-│   ├── build.gradle
-│   └── proguard-rules.pro
-├── build.gradle
-├── settings.gradle
-└── gradle.properties
+  app/src/main/java/com/grabam/
+    MainActivity.kt
+    ShareActivity.kt
+    quicksettings/
+      ClipboardActivity.kt
+      DownloadTile.kt
+    service/
+      DownloadService.kt
+    utils/
+      NotificationHelper.kt
+      UrlUtils.kt
+backend/
+  app.py
+  requirements.txt
 ```
-
-### Dependencies
-
-- Kotlin Coroutines: For async operations
-- OkHttp: For network requests
-- Material Components: For UI components
-- AndroidX: For modern Android APIs
 
 ## Troubleshooting
 
-For detailed troubleshooting and configuration, see [CONFIG.md](CONFIG.md).
+- Confirm the backend is running and reachable from the phone or emulator.
+- Verify `BACKEND_URL` points to the correct IP address and port.
+- Test `http://YOUR_IP:8000/health` from the device browser.
+- Update `yt-dlp` if extraction starts failing for YouTube or Twitter/X.
+- Grant notification permission if progress notifications do not appear.
 
-### Common Issues
+## Notes
 
-**Build Errors**
-- Make sure you have the latest Android SDK
-- Update `local.properties` with your SDK path
-- Sync Gradle files after any dependency changes
-
-**Download Failures**
-- Check that your backend service is running
-- Verify the backend URL in `DownloadService.kt`
-- Ensure the backend returns the correct JSON format
-- Check network connectivity
-
-**Notification Issues**
-- Make sure you granted notification permissions
-- Check if the app is allowed to show notifications in system settings
-
-**Backend Connection Issues**
-- Ensure phone and computer are on same network
-- Disable VPN on both devices
-- Check firewall settings
-- Test backend URL in phone browser
-
-## Future Enhancements
-
-- [ ] Add support for Instagram, Facebook, and YouTube
-- [ ] Implement client-side video URL extraction
-- [ ] Add download history
-- [ ] Support for downloading multiple videos
-- [ ] Video preview before download
-- [ ] Quality selection for downloads
-
-## License
-
-This project is for educational purposes only. Please respect Twitter's terms of service and copyright laws when using this app.
+This project is for educational use. Respect platform terms and copyright law when downloading content.

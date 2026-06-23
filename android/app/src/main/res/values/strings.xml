@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Clippd</string>
-    <string name="quick_settings_tile_label">Download Video</string>
-    <string name="paste_link">Paste Link</string>
-    <string name="download">Download</string>
-    <string name="enter_url">Enter video URL</string>
+    <string name="app_name">grab am</string>
+    <string name="app_description">Grab it. Save it. Easy.</string>
+    <string name="quick_settings_tile_label">Grab video</string>
+    <string name="paste_link">Paste</string>
+    <string name="download">Grab video</string>
+    <string name="enter_url">Enter Twitter/X or YouTube URL</string>
     <string name="download_started">Download started</string>
-    <string name="invalid_url">Invalid URL</string>
+    <string name="invalid_url">Use a Twitter/X or YouTube video URL</string>
     <string name="clipboard_empty">Clipboard is empty</string>
+    <string name="add_tile">Add Quick Settings Tile</string>
+    <string name="add_tile_short">Tile</string>
+    <string name="tile_already_added">Tile already added or not supported</string>
 </resources>
