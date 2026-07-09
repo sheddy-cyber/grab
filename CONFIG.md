@@ -95,7 +95,7 @@ curl "http://localhost:8000/extract?url=https://x.com/example/status/1234567890"
 
 - Check backend logs for the yt-dlp error.
 - Update backend dependencies with `pip install --upgrade yt-dlp`.
-- Confirm the URL is a Twitter/X status video, YouTube watch URL, YouTube short URL, `youtu.be` URL, embed URL, or live URL.
+- Confirm the URL is a Twitter/X status video, YouTube watch/shorts/youtu.be/embed/live URL, a Facebook watch/videos/reel/fb.watch URL, or an Instagram reel/p/tv URL.
 - Some private, age-restricted, region-locked, or login-required videos may need cookies.
 
 ### Notifications do not appear

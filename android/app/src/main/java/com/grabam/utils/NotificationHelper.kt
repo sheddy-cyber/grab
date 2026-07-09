@@ -5,8 +5,10 @@ import android.app.NotificationManager
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.os.Build
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.grabam.R
 
 class NotificationHelper(private val context: Context) {
@@ -47,22 +49,36 @@ class NotificationHelper(private val context: Context) {
             .setOnlyAlertOnce(true)
     }
 
+    private fun hasNotificationPermission(): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return ContextCompat.checkSelfPermission(
+                context,
+                android.Manifest.permission.POST_NOTIFICATIONS
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
+        return true
+    }
+
     fun updateProgress(
         builder: NotificationCompat.Builder,
         progress: Int,
-        content: String? = null
+        content: String? = null,
+        indeterminate: Boolean = false
     ) {
         content?.let { builder.setContentText(it) }
-        builder.setProgress(100, progress.coerceIn(0, 100), false)
-        NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, builder.build())
+        builder.setProgress(100, progress.coerceIn(0, 100), indeterminate)
+        
+        if (hasNotificationPermission()) {
+            NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, builder.build())
+        }
     }
 
-    fun showComplete(title: String, videoUri: android.net.Uri? = null) {
+    fun showComplete(title: String, videoUri: android.net.Uri? = null, mimeType: String = "video/mp4") {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         
         val contentIntent = videoUri?.let {
             val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
-                setDataAndType(it, "video/mp4")
+                setDataAndType(it, mimeType)
                 addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
             }
@@ -85,7 +101,9 @@ class NotificationHelper(private val context: Context) {
             .setContentIntent(contentIntent)
         
         notificationManager.cancel(NOTIFICATION_ID)
-        notificationManager.notify(System.currentTimeMillis().toInt(), builder.build())
+        if (hasNotificationPermission()) {
+            notificationManager.notify(System.currentTimeMillis().toInt(), builder.build())
+        }
     }
 
     fun showError(message: String) {
@@ -100,8 +118,28 @@ class NotificationHelper(private val context: Context) {
             .setAutoCancel(true)
         
         notificationManager.cancel(NOTIFICATION_ID)
-        notificationManager.notify(System.currentTimeMillis().toInt(), builder.build())
+        if (hasNotificationPermission()) {
+            notificationManager.notify(System.currentTimeMillis().toInt(), builder.build())
+        }
     }
 
-    private fun appLogo() = BitmapFactory.decodeResource(context.resources, R.drawable.app_logo)
+    fun showMessage(title: String, message: String) {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+            .setSmallIcon(R.drawable.ic_download)
+            .setLargeIcon(appLogo())
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+
+        if (hasNotificationPermission()) {
+            notificationManager.notify(System.currentTimeMillis().toInt(), builder.build())
+        }
+    }
+
+    private fun appLogo() =
+        BitmapFactory.decodeResource(context.resources, R.drawable.app_logo)
+            ?: BitmapFactory.decodeResource(context.resources, R.drawable.ic_download)
 }

@@ -1,17 +1,16 @@
 package com.grabam
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import com.grabam.service.DownloadService
 import com.grabam.utils.UrlUtils
 
-class ShareActivity : AppCompatActivity() {
+class ShareActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // This activity should have no UI
         handleIntent(intent)
         finish()
     }

@@ -5,7 +5,9 @@ import java.net.URI
 object UrlUtils {
     enum class Platform(val displayName: String) {
         TWITTER_X("Twitter/X"),
-        YOUTUBE("YouTube")
+        YOUTUBE("YouTube"),
+        FACEBOOK("Facebook"),
+        INSTAGRAM("Instagram")
     }
 
     data class SupportedVideoUrl(
@@ -14,7 +16,7 @@ object UrlUtils {
     )
 
     private val supportedUrlPattern = Regex(
-        pattern = """\b(?:https?://)?(?:[a-z0-9-]+\.)*(?:twitter\.com|x\.com|youtube\.com|youtube-nocookie\.com|youtu\.be)/[^\s<>"']+""",
+        pattern = """\b(?:https?://)?(?:[a-z0-9-]+\.)*(?:twitter\.com|x\.com|youtube\.com|youtube-nocookie\.com|youtu\.be|facebook\.com|fb\.watch|fb\.com|instagram\.com)/[^\s<>"']+""",
         option = RegexOption.IGNORE_CASE
     )
     private val twitterStatusIdPattern = Regex("""^\d+$""")
@@ -37,7 +39,7 @@ object UrlUtils {
             return null
         }
 
-        return normalizeTwitterUrl(uri) ?: normalizeYouTubeUrl(uri)
+        return normalizeTwitterUrl(uri) ?: normalizeYouTubeUrl(uri) ?: normalizeFacebookUrl(uri) ?: normalizeInstagramUrl(uri)
     }
 
     private fun prepareCandidate(rawCandidate: String): String? {
@@ -98,6 +100,106 @@ object UrlUtils {
             url = normalizedUrl,
             platform = Platform.YOUTUBE
         )
+    }
+
+    private fun normalizeFacebookUrl(uri: URI): SupportedVideoUrl? {
+        val host = uri.host?.lowercase() ?: return null
+        if (!isFacebookHost(host)) return null
+
+        val segments = uri.pathSegments()
+        if (segments.isEmpty()) return null
+        val lowerSegments = segments.map { it.lowercase() }
+
+        // fb.watch/<shortcode> short links
+        if (host == "fb.watch" || host.endsWith(".fb.watch")) {
+            val shortcode = segments.firstOrNull() ?: return null
+            return SupportedVideoUrl(
+                url = "https://fb.watch/$shortcode",
+                platform = Platform.FACEBOOK
+            )
+        }
+
+        // facebook.com/watch?v=<id>
+        if (lowerSegments.first() == "watch") {
+            val videoId = uri.queryParameter("v") ?: return null
+            return SupportedVideoUrl(
+                url = "https://www.facebook.com/watch?v=$videoId",
+                platform = Platform.FACEBOOK
+            )
+        }
+
+        // facebook.com/<page>/videos/<id>/
+        val videosIndex = lowerSegments.indexOf("videos")
+        if (videosIndex != -1) {
+            val videoId = segments.getOrNull(videosIndex + 1) ?: return null
+            return SupportedVideoUrl(
+                url = "https://www.facebook.com/watch?v=$videoId",
+                platform = Platform.FACEBOOK
+            )
+        }
+
+        // facebook.com/reel/<id> or /reels/<id>
+        val reelIndex = lowerSegments.indexOfFirst { it == "reel" || it == "reels" }
+        if (reelIndex != -1) {
+            val reelId = segments.getOrNull(reelIndex + 1) ?: return null
+            return SupportedVideoUrl(
+                url = "https://www.facebook.com/reel/$reelId",
+                platform = Platform.FACEBOOK
+            )
+        }
+
+        // facebook.com/share/v/<id>/ or /share/r/<id>/ (share links, kept as-is)
+        if (lowerSegments.first() == "share" && segments.size >= 3) {
+            return SupportedVideoUrl(
+                url = "https://www.facebook.com/${segments.joinToString("/")}",
+                platform = Platform.FACEBOOK
+            )
+        }
+
+        // m.facebook.com/video.php?v=<id> and /photo.php?v=<id> (mobile web)
+        if (lowerSegments.first() in listOf("video.php", "photo.php")) {
+            val videoId = uri.queryParameter("v") ?: return null
+            return SupportedVideoUrl(
+                url = "https://www.facebook.com/watch?v=$videoId",
+                platform = Platform.FACEBOOK
+            )
+        }
+
+        return null
+    }
+
+    private fun normalizeInstagramUrl(uri: URI): SupportedVideoUrl? {
+        val host = uri.host?.lowercase() ?: return null
+        if (!isInstagramHost(host)) return null
+
+        val segments = uri.pathSegments()
+        val lowerSegments = segments.map { it.lowercase() }
+
+        // Supports /reel/<code>, /p/<code>, /tv/<code>, and the
+        // username-prefixed variant /<username>/reel/<code>
+        val typeIndex = lowerSegments.indexOfFirst { it == "reel" || it == "reels" || it == "p" || it == "tv" }
+        if (typeIndex == -1) return null
+
+        val shortcode = segments.getOrNull(typeIndex + 1) ?: return null
+        val typeSegment = if (lowerSegments[typeIndex] == "reels") "reel" else lowerSegments[typeIndex]
+
+        return SupportedVideoUrl(
+            url = "https://www.instagram.com/$typeSegment/$shortcode/",
+            platform = Platform.INSTAGRAM
+        )
+    }
+
+    private fun isFacebookHost(host: String): Boolean {
+        return host == "facebook.com" ||
+            host.endsWith(".facebook.com") ||
+            host == "fb.watch" ||
+            host.endsWith(".fb.watch") ||
+            host == "fb.com" ||
+            host.endsWith(".fb.com")
+    }
+
+    private fun isInstagramHost(host: String): Boolean {
+        return host == "instagram.com" || host.endsWith(".instagram.com")
     }
 
     private fun isTwitterHost(host: String): Boolean {

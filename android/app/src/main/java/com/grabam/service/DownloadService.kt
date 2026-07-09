@@ -1,6 +1,7 @@
 package com.grabam.service
 
 import android.app.Service
+import android.content.ComponentName
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -11,6 +12,7 @@ import android.provider.MediaStore
 import android.util.Log
 import com.grabam.utils.UrlUtils
 import com.grabam.utils.NotificationHelper
+import com.grabam.utils.MediaFormatUtils
 import kotlinx.coroutines.*
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -25,7 +27,25 @@ class DownloadService : Service() {
     companion object {
         const val ACTION_START_DOWNLOAD = "com.grabam.START_DOWNLOAD"
         const val EXTRA_URL = "extra_url"
-        const val DEFAULT_BACKEND_URL = "http://192.168.43.26:8000"
+        const val DEFAULT_BACKEND_URL = "https://sheddycyber-grab-am.hf.space"
+        
+        @Volatile
+        var isDownloading = false
+            private set
+
+        @Volatile
+        var onServiceStarted: (() -> Unit)? = null
+
+        private val ALLOWED_DOWNLOAD_HEADERS = setOf(
+            "user-agent",
+            "referer",
+            "origin",
+            "cookie",
+            "accept",
+            "accept-language"
+        )
+
+        private fun isProxiedDownload(url: String): Boolean = url.contains("/proxy?")
 
         fun getFormattedApiUrl(context: Context, encodedUrl: String): String {
             val sharedPrefs = context.getSharedPreferences("grab_am_settings", MODE_PRIVATE)
@@ -58,6 +78,7 @@ class DownloadService : Service() {
     override fun onCreate() {
         super.onCreate()
         notificationHelper = NotificationHelper(this)
+
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -93,18 +114,24 @@ class DownloadService : Service() {
             } else {
                 startForeground(NotificationHelper.NOTIFICATION_ID, builder.build())
             }
+            // Notify active listeners that the service has successfully entered the foreground
+            Log.d("GrabAmDownload", "Service in foreground. Notifying listeners.")
+            onServiceStarted?.invoke()
         } catch (e: Exception) {
             Log.e("GrabAmDownload", "Error starting foreground service", e)
         }
 
         serviceScope.launch {
+            isDownloading = true
+            
             var resultUri: android.net.Uri? = null
             var resultTitle: String? = null
+            var resultMimeType: String? = null
             var errorMsg: String? = null
 
             try {
                 val normalizedVideo = requestedVideo
-                    ?: throw Exception("Unsupported link. Use a Twitter/X or YouTube video URL.")
+                    ?: throw Exception("Unsupported link. Use a Twitter/X, YouTube, Facebook, or Instagram video URL.")
                 Log.d("GrabAmDownload", "Normalized URL: ${normalizedVideo.url}")
 
                 // 1. Extract real download URL from backend
@@ -139,19 +166,21 @@ class DownloadService : Service() {
                 val videoUri = downloadFile(downloadUrl, title, extension, mimeType, headers, builder)
                 
                 Log.d("GrabAmDownload", "Download complete! URI: $videoUri")
-                resultUri = videoUri
+                resultUri = videoUri.first
+                resultMimeType = videoUri.second
                 resultTitle = title
             } catch (e: Exception) {
                 Log.e("GrabAmDownload", "Download failed", e)
                 errorMsg = e.message ?: "Unknown error"
             } finally {
                 Log.d("GrabAmDownload", "Stopping service")
+                isDownloading = false
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 
                 if (errorMsg != null) {
                     notificationHelper.showError(errorMsg)
                 } else if (resultTitle != null) {
-                    notificationHelper.showComplete(resultTitle, resultUri)
+                    notificationHelper.showComplete(resultTitle, resultUri, resultMimeType ?: "video/mp4")
                 }
 
                 stopSelf(startId)
@@ -184,33 +213,72 @@ class DownloadService : Service() {
         mimeType: String,
         headers: Map<String, String>,
         builder: androidx.core.app.NotificationCompat.Builder
-    ): android.net.Uri? {
+    ): Pair<android.net.Uri, String> {
         val requestBuilder = Request.Builder().url(url)
-        headers.forEach { (name, value) ->
-            if (name.isNotBlank() && value.isNotBlank()) {
-                requestBuilder.header(name, value)
+        
+        val defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        requestBuilder.header("User-Agent", defaultUserAgent)
+        requestBuilder.header("Accept", "video/webm,video/mp4,video/*;q=0.9,*/*;q=0.8")
+
+        if (!isProxiedDownload(url)) {
+            headers.forEach { (name, value) ->
+                if (name.isNotBlank() && value.isNotBlank() &&
+                    name.lowercase() in ALLOWED_DOWNLOAD_HEADERS
+                ) {
+                    requestBuilder.header(name, value)
+                }
             }
         }
+
         val request = requestBuilder.build()
         
         return httpClient.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                throw Exception("Failed to download file: HTTP ${response.code}")
+            val body = response.body
+            if (!response.isSuccessful || body == null) {
+                val errorMessage = body?.string()?.let { raw ->
+                    runCatching { JSONObject(raw).optString("error") }.getOrNull()
+                        ?.takeIf { it.isNotBlank() }
+                }
+                throw Exception(
+                    errorMessage ?: "Failed to download file: HTTP ${response.code}"
+                )
+            }
+            
+            val contentType = body.contentType()?.toString() ?: ""
+            if (contentType.contains("text/html") || contentType.contains("application/json")) {
+                throw Exception("Blocked by provider or invalid media format returned.")
             }
 
-            val body = response.body ?: throw Exception("Empty response body")
             val contentLength = body.contentLength()
-            val inputStream: InputStream = body.byteStream()
-            val resolvedMimeType = body.contentType()?.toString()
-                ?.substringBefore(";")
-                ?.takeIf { it.startsWith("video/") }
-                ?: mimeType
+            val headerBytes = response.peekBody(512).bytes()
 
-            // 3. Save to MediaStore (Gallery)
-            saveVideoToGallery(inputStream, title, extension, resolvedMimeType, contentLength) { progress ->
-                val downloadProgress = 30 + ((progress.coerceIn(0, 100) * 70) / 100)
-                notificationHelper.updateProgress(builder, downloadProgress, "Grabbing video...")
+            if (headerBytes.isEmpty()) {
+                throw Exception(
+                    "Download returned an empty file (HTTP ${response.code}, length=$contentLength)."
+                )
             }
+
+            if (MediaFormatUtils.isLikelyErrorPayload(headerBytes)) {
+                throw Exception("Provider returned an error page instead of a video.")
+            }
+
+            val detectedFormat = MediaFormatUtils.detectFromHeader(headerBytes)
+            val resolvedExtension = detectedFormat?.extension ?: extension.ifBlank { "mp4" }
+            val resolvedMimeType = detectedFormat?.mimeType ?: mimeType.ifBlank { mimeTypeForExtension(resolvedExtension) }
+
+            if (detectedFormat == null) {
+                Log.w("GrabAmDownload", "Could not detect format from header bytes, using backend-provided: $extension / $mimeType")
+            }
+
+            saveVideoToGallery(body.byteStream(), title, resolvedExtension, resolvedMimeType, contentLength) { progress, downloadedBytes ->
+                if (contentLength <= 0) {
+                    val mb = downloadedBytes / (1024 * 1024)
+                    notificationHelper.updateProgress(builder, 0, "Grabbing video... (${mb}MB)", true)
+                } else {
+                    val downloadProgress = 30 + ((progress.coerceIn(0, 100) * 70) / 100)
+                    notificationHelper.updateProgress(builder, downloadProgress, "Grabbing video... ($progress%)")
+                }
+            }.let { uri -> Pair(uri, resolvedMimeType) }
         }
     }
 
@@ -220,7 +288,7 @@ class DownloadService : Service() {
         extension: String,
         mimeType: String,
         totalBytes: Long,
-        onProgress: (Int) -> Unit
+        onProgress: (progress: Int, downloadedBytes: Long) -> Unit
     ): android.net.Uri {
         // Sanitize filename: remove special characters and limit length
         var sanitizedTitle = title.replace(Regex("[^a-zA-Z0-9]"), "_")
@@ -233,7 +301,7 @@ class DownloadService : Service() {
 
         val filename = "${sanitizedTitle}_${System.currentTimeMillis()}.$extension"
         
-        Log.d("GrabAmDownload", "Saving video with filename: $filename")
+        Log.d("GrabAmDownload", "Saving video with filename: $filename, mimeType: $mimeType, expected totalBytes: $totalBytes")
         val contentValues = ContentValues().apply {
             put(MediaStore.Video.Media.DISPLAY_NAME, filename)
             put(MediaStore.Video.Media.MIME_TYPE, mimeType)
@@ -251,31 +319,60 @@ class DownloadService : Service() {
         }
 
         val uri = resolver.insert(collection, contentValues) ?: throw Exception("Failed to create MediaStore entry")
+        Log.d("GrabAmDownload", "Created MediaStore entry URI: $uri")
 
         try {
+            var finalTotalRead: Long = 0
             resolver.openOutputStream(uri).use { outputStream ->
                 if (outputStream == null) throw Exception("Failed to open output stream")
                 
                 val buffer = ByteArray(8192)
                 var bytesRead: Int
-                var totalRead: Long = 0
+                var lastProgress = -1
+                var lastUpdateTime = System.currentTimeMillis()
                 
                 while (inputStream.read(buffer).also { bytesRead = it } != -1) {
                     outputStream.write(buffer, 0, bytesRead)
-                    totalRead += bytesRead
+                    finalTotalRead += bytesRead
+                    val currentTime = System.currentTimeMillis()
                     if (totalBytes > 0) {
-                        val progress = ((totalRead * 100) / totalBytes).toInt()
-                        onProgress(progress)
+                        val progress = ((finalTotalRead * 100) / totalBytes).toInt()
+                        // Only update notification max twice a second, or if we hit 100%
+                        if (progress != lastProgress && (currentTime - lastUpdateTime > 500 || progress == 100)) {
+                            onProgress(progress, finalTotalRead)
+                            lastProgress = progress
+                            lastUpdateTime = currentTime
+                        }
+                    } else {
+                        if (currentTime - lastUpdateTime > 500) {
+                            onProgress(0, finalTotalRead)
+                            lastUpdateTime = currentTime
+                        }
                     }
                 }
+                outputStream.flush()
+                Log.d("GrabAmDownload", "All stream bytes written to file. Total size: $finalTotalRead bytes")
+            }
+
+            if (finalTotalRead == 0L) {
+                throw Exception("Download returned an empty file.")
             }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                contentValues.clear()
-                contentValues.put(MediaStore.Video.Media.IS_PENDING, 0)
-                resolver.update(uri, contentValues, null, null)
+                val updateValues = ContentValues().apply {
+                    put(MediaStore.Video.Media.IS_PENDING, 0)
+                    put(MediaStore.Video.Media.SIZE, finalTotalRead)
+                }
+                val rows = resolver.update(uri, updateValues, null, null)
+                Log.d("GrabAmDownload", "Updated MediaStore IS_PENDING to 0. Rows affected: $rows")
+            } else {
+                val updateValues = ContentValues().apply {
+                    put(MediaStore.Video.Media.SIZE, finalTotalRead)
+                }
+                resolver.update(uri, updateValues, null, null)
             }
         } catch (e: Exception) {
+            Log.e("GrabAmDownload", "Exception inside saveVideoToGallery, deleting incomplete file: ${e.message}", e)
             resolver.delete(uri, null, null)
             throw e
         }
@@ -306,12 +403,7 @@ class DownloadService : Service() {
     }
 
     private fun mimeTypeForExtension(extension: String): String {
-        return when (extension.lowercase()) {
-            "webm" -> "video/webm"
-            "mov" -> "video/quicktime"
-            "mkv" -> "video/x-matroska"
-            else -> "video/mp4"
-        }
+        return MediaFormatUtils.mimeTypeForExtension(extension)
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

@@ -5,6 +5,8 @@ Flask service that uses `yt-dlp` to extract direct download URLs for supported v
 ## Supported Sources
 
 - Twitter/X status videos
+- Facebook videos/reels
+- Instagram reels/posts with video
 - YouTube videos
 - YouTube Shorts
 
@@ -31,7 +33,7 @@ For a physical Android device, use your computer's LAN IP in the Android app. Fo
 
 Query parameters:
 
-- `url`: Twitter/X or YouTube video URL.
+- `url`: Twitter/X, YouTube, Facebook, or Instagram video URL.
 
 Example:
 
@@ -74,7 +76,7 @@ curl "http://localhost:8000/extract?url=https://x.com/example/status/1234567890"
 
 ## Troubleshooting
 
-- Keep `yt-dlp` updated; YouTube and Twitter/X extraction rules change often.
+- Keep `yt-dlp` updated; YouTube, Twitter/X, Facebook, and Instagram extraction rules change often.
 - Some age-restricted, private, region-locked, or login-gated videos may require cookies.
 - Make sure your firewall allows inbound connections on port `8000` for physical devices.
 - Confirm the phone and computer are on the same network and not isolated by VPN settings.

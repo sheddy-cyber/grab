@@ -1,15 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="transparent">#00000000</color>
-    <color name="brand_ink">#120533</color>
-    <color name="brand_purple">#6E20F2</color>
-    <color name="brand_purple_dark">#4310B5</color>
-    <color name="brand_coral">#F75072</color>
-    <color name="surface_background">#F8F7FC</color>
-    <color name="surface_panel">#FFFFFFFF</color>
-    <color name="surface_panel_alt">#F1EEFA</color>
-    <color name="text_muted">#766F8D</color>
-    <color name="outline_soft">#DED8EA</color>
+
+    <!-- New Modern UI Palette (Dark Mode First) -->
+    <color name="colorPrimary">#E1306C</color> <!-- Using Instagram Pink as primary accent -->
+    <color name="colorSecondary">#1DA1F2</color> <!-- Twitter Blue -->
+    <color name="colorAccent">#FF0000</color> <!-- YouTube Red -->
+    
+    <!-- Exact Logo Colors -->
+    <color name="brandTwitter">#1DA1F2</color>
+    <color name="brandYouTube">#FF0000</color>
+    <color name="brandInstagram">#E1306C</color>
+    <color name="brandInstagramEnd">#F56040</color>
+    <color name="brandFacebook">#1877F2</color>
+
+    <color name="colorBackground">#0F172A</color>
+    <color name="colorSurface">#1E293B</color>
+    <color name="colorSurfaceAlt">#334155</color>
+    
+    <color name="textPrimary">#FFFFFF</color>
+    <color name="textSecondary">#94A3B8</color>
+    <color name="textOnPrimary">#FFFFFF</color>
+    
+    <color name="outline_soft">#475569</color>
+    <color name="error">#EF4444</color>
+
+    <!-- Branding & UI Colors (Neobrutalism) -->
+    <color name="brand_ink">#1A1A1A</color>
+    <color name="brand_punch">#FF5C00</color>
+    <color name="surface_panel">#FFFFFF</color>
+    <color name="surface_panel_alt">#F5F5F5</color>
+
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 </resources>

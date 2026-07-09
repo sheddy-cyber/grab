@@ -5,13 +5,15 @@ An Android app for downloading supported social media videos from the app, the A
 ## Supported Sources
 
 - Twitter/X status videos
+- Facebook videos/reels
+- Instagram reels/posts with video
 - YouTube videos
 - YouTube Shorts
 
 ## Features
 
 - **Direct Download**: Paste a supported video URL in the app and download it.
-- **Share Integration**: Share a Twitter/X or YouTube link to grab am from another app.
+- **Share Integration**: Share a Twitter/X, YouTube, Facebook, or Instagram link to grab am from another app.
 - **Quick Settings Tile**: Copy a supported URL, tap the tile, and start the download.
 - **Background Downloads**: Downloads run through a foreground service with progress notifications.
 - **Gallery Integration**: Downloads are saved to `Movies/grab am`.
@@ -50,7 +52,7 @@ Use `10.0.2.2` when testing from the Android emulator against a backend running 
 
 ## Backend Contract
 
-`GET /extract?url=<encoded-url>` accepts a Twitter/X or YouTube URL and returns:
+`GET /extract?url=<encoded-url>` accepts a Twitter/X, YouTube, Facebook, or Instagram URL and returns:
 
 ```json
 {
@@ -65,7 +67,7 @@ Use `10.0.2.2` when testing from the Android emulator against a backend running 
 }
 ```
 
-The Android client downloads one direct media URL, so the backend prefers single-file formats that already include both video and audio. Keep `yt-dlp` current because YouTube and Twitter/X extraction can change.
+The Android client downloads one direct media URL, so the backend prefers single-file formats that already include both video and audio. Keep `yt-dlp` current because YouTube, Twitter/X, Facebook, and Instagram extraction can change.
 
 ## Permissions
 
@@ -79,7 +81,7 @@ The Android client downloads one direct media URL, so the backend prefers single
 
 ### Share Menu
 
-1. Open Twitter/X or YouTube.
+1. Open Twitter/X, YouTube, Facebook, or Instagram.
 2. Share a video, status, or Shorts link.
 3. Select grab am.
 4. The download starts automatically.
@@ -122,7 +124,7 @@ backend/
 - Confirm the backend is running and reachable from the phone or emulator.
 - Verify `BACKEND_URL` points to the correct IP address and port.
 - Test `http://YOUR_IP:8000/health` from the device browser.
-- Update `yt-dlp` if extraction starts failing for YouTube or Twitter/X.
+- Update `yt-dlp` if extraction starts failing for YouTube, Twitter/X, Facebook, or Instagram.
 - Grant notification permission if progress notifications do not appear.
 
 ## Notes
