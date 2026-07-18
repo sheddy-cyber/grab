@@ -14,6 +14,13 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.textfield.TextInputEditText
 import com.grabam.utils.UrlUtils
 import com.grabam.service.DownloadService
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.method.LinkMovementMethod
+import android.text.style.ClickableSpan
+import android.view.View
+import android.widget.TextView
+import android.net.Uri
 
 class MainActivity : AppCompatActivity() {
 
@@ -42,10 +49,36 @@ class MainActivity : AppCompatActivity() {
 
         // Request notification permission for Android 13+
         requestNotificationPermission()
+        
+        // Request storage permission for Android 9 and below
+        requestStoragePermission()
 
+        setupCreatedByText()
     }
 
+    private fun setupCreatedByText() {
+        val tvCreatedBy = findViewById<TextView>(R.id.tvCreatedBy)
+        val createdByText = "Created by Kris Shedrach"
+        val spannableString = SpannableString(createdByText)
+        val clickableSpan = object : ClickableSpan() {
+            override fun onClick(widget: View) {
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://krisshedrach.dev"))
+                startActivity(intent)
+            }
+        }
+        spannableString.setSpan(clickableSpan, 11, 24, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        tvCreatedBy.text = spannableString
+        tvCreatedBy.movementMethod = LinkMovementMethod.getInstance()
+    }
 
+    private fun requestStoragePermission() {
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != 
+                PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 102)
+            }
+        }
+    }
 
     private fun requestNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -73,20 +106,6 @@ class MainActivity : AppCompatActivity() {
         val videoUrl = UrlUtils.extractSupportedUrl(rawUrl)
         
         if (videoUrl != null) {
-            var finished = false
-            val finishAction = Runnable {
-                if (!finished) {
-                    finished = true
-                    DownloadService.onServiceStarted = null
-                    finish()
-                }
-            }
-
-            // Wait for service to register as foreground before finishing the activity
-            DownloadService.onServiceStarted = {
-                runOnUiThread(finishAction)
-            }
-
             val serviceIntent = Intent(this, DownloadService::class.java).apply {
                 action = DownloadService.ACTION_START_DOWNLOAD
                 putExtra(DownloadService.EXTRA_URL, videoUrl.url)
@@ -100,8 +119,8 @@ class MainActivity : AppCompatActivity() {
             
             Toast.makeText(this, R.string.download_started, Toast.LENGTH_SHORT).show()
             
-            // Post a 2-second timeout safety net to ensure we finish the activity even if service start fails
-            window.decorView.postDelayed(finishAction, 2000)
+            // Clear the URL field after starting download
+            etUrl.text?.clear()
         } else {
             Toast.makeText(this, R.string.invalid_url, Toast.LENGTH_SHORT).show()
         }

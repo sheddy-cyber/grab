@@ -29,9 +29,10 @@ class DownloadService : Service() {
         const val EXTRA_URL = "extra_url"
         const val DEFAULT_BACKEND_URL = "https://sheddycyber-grab-am.hf.space"
         
-        @Volatile
-        var isDownloading = false
-            private set
+        private val activeDownloadCount = java.util.concurrent.atomic.AtomicInteger(0)
+        
+        val isDownloading: Boolean
+            get() = activeDownloadCount.get() > 0
 
         @Volatile
         var onServiceStarted: (() -> Unit)? = null
@@ -69,9 +70,9 @@ class DownloadService : Service() {
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val httpClient = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(2, TimeUnit.MINUTES)
-        .writeTimeout(2, TimeUnit.MINUTES)
+        .connectTimeout(60, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.MINUTES)
+        .writeTimeout(30, TimeUnit.MINUTES)
         .build()
     private lateinit var notificationHelper: NotificationHelper
 
@@ -94,7 +95,8 @@ class DownloadService : Service() {
     }
 
     private fun startForegroundDownload(videoUrl: String, startId: Int) {
-        Log.d("GrabAmDownload", "Starting foreground download for: $videoUrl")
+        val downloadId = NotificationHelper.NOTIFICATION_ID + activeDownloadCount.incrementAndGet()
+        Log.d("GrabAmDownload", "Starting foreground download for: $videoUrl with id $downloadId")
 
         val requestedVideo = UrlUtils.extractSupportedUrl(videoUrl)
         val initialContent = requestedVideo?.let {
@@ -107,12 +109,12 @@ class DownloadService : Service() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 // API 34+ requires specific foreground service types
                 startForeground(
-                    NotificationHelper.NOTIFICATION_ID,
+                    downloadId,
                     builder.build(),
                     ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
                 )
             } else {
-                startForeground(NotificationHelper.NOTIFICATION_ID, builder.build())
+                startForeground(downloadId, builder.build())
             }
             // Notify active listeners that the service has successfully entered the foreground
             Log.d("GrabAmDownload", "Service in foreground. Notifying listeners.")
@@ -122,7 +124,6 @@ class DownloadService : Service() {
         }
 
         serviceScope.launch {
-            isDownloading = true
             
             var resultUri: android.net.Uri? = null
             var resultTitle: String? = null
@@ -139,7 +140,9 @@ class DownloadService : Service() {
                 notificationHelper.updateProgress(
                     builder,
                     10,
-                    "Extracting ${normalizedVideo.platform.displayName} video..."
+                    "Extracting ${normalizedVideo.platform.displayName} video...",
+                    false,
+                    downloadId
                 )
                 
                 val encodedUrl = URLEncoder.encode(normalizedVideo.url, StandardCharsets.UTF_8.toString())
@@ -162,8 +165,8 @@ class DownloadService : Service() {
 
                 // 2. Start the actual file download
                 Log.d("GrabAmDownload", "Downloading file: $downloadUrl")
-                notificationHelper.updateProgress(builder, 30, "Grabbing video...")
-                val videoUri = downloadFile(downloadUrl, title, extension, mimeType, headers, builder)
+                notificationHelper.updateProgress(builder, 30, "Grabbing video...", false, downloadId)
+                val videoUri = downloadFile(downloadUrl, title, extension, mimeType, headers, builder, downloadId)
                 
                 Log.d("GrabAmDownload", "Download complete! URI: $videoUri")
                 resultUri = videoUri.first
@@ -173,17 +176,24 @@ class DownloadService : Service() {
                 Log.e("GrabAmDownload", "Download failed", e)
                 errorMsg = e.message ?: "Unknown error"
             } finally {
-                Log.d("GrabAmDownload", "Stopping service")
-                isDownloading = false
-                stopForeground(STOP_FOREGROUND_REMOVE)
+                Log.d("GrabAmDownload", "Stopping service or finishing task")
+                val remaining = activeDownloadCount.decrementAndGet()
+                if (remaining == 0) {
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                }
                 
                 if (errorMsg != null) {
-                    notificationHelper.showError(errorMsg)
+                    notificationHelper.showError(errorMsg, downloadId)
                 } else if (resultTitle != null) {
-                    notificationHelper.showComplete(resultTitle, resultUri, resultMimeType ?: "video/mp4")
+                    notificationHelper.showComplete(resultTitle, resultUri, resultMimeType ?: "video/mp4", downloadId)
+                    withContext(Dispatchers.Main) {
+                        android.widget.Toast.makeText(this@DownloadService, "Download completed", android.widget.Toast.LENGTH_SHORT).show()
+                    }
                 }
 
-                stopSelf(startId)
+                if (remaining == 0) {
+                    stopSelf()
+                }
             }
         }
     }
@@ -212,7 +222,8 @@ class DownloadService : Service() {
         extension: String,
         mimeType: String,
         headers: Map<String, String>,
-        builder: androidx.core.app.NotificationCompat.Builder
+        builder: androidx.core.app.NotificationCompat.Builder,
+        downloadId: Int
     ): Pair<android.net.Uri, String> {
         val requestBuilder = Request.Builder().url(url)
         
@@ -273,10 +284,10 @@ class DownloadService : Service() {
             saveVideoToGallery(body.byteStream(), title, resolvedExtension, resolvedMimeType, contentLength) { progress, downloadedBytes ->
                 if (contentLength <= 0) {
                     val mb = downloadedBytes / (1024 * 1024)
-                    notificationHelper.updateProgress(builder, 0, "Grabbing video... (${mb}MB)", true)
+                    notificationHelper.updateProgress(builder, 0, "Grabbing video... (${mb}MB)", true, downloadId)
                 } else {
                     val downloadProgress = 30 + ((progress.coerceIn(0, 100) * 70) / 100)
-                    notificationHelper.updateProgress(builder, downloadProgress, "Grabbing video... ($progress%)")
+                    notificationHelper.updateProgress(builder, downloadProgress, "Grabbing video... ($progress%)", false, downloadId)
                 }
             }.let { uri -> Pair(uri, resolvedMimeType) }
         }

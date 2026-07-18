@@ -1,5 +1,6 @@
 import React from "react";
 import { Download, Share2, Copy } from "lucide-react";
+import posthog from "posthog-js";
 import "./index.css";
 
 function App() {
@@ -106,7 +107,13 @@ function App() {
             <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>
               Experience the full power of <em>grab am</em> on your phone.
             </p>
-            <a href="/grab_am.apk" download="grab_am.apk" className="btn-gradient" style={{ width: '100%', textDecoration: 'none' }}>
+            <a 
+              href="/grab_am.apk" 
+              download="grab_am.apk" 
+              className="btn-gradient" 
+              style={{ width: '100%', textDecoration: 'none' }}
+              onClick={() => posthog.capture('download_apk_clicked')}
+            >
               Download APK
             </a>
           </div>

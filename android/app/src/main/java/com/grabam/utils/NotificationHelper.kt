@@ -63,17 +63,18 @@ class NotificationHelper(private val context: Context) {
         builder: NotificationCompat.Builder,
         progress: Int,
         content: String? = null,
-        indeterminate: Boolean = false
+        indeterminate: Boolean = false,
+        notificationId: Int = NOTIFICATION_ID
     ) {
         content?.let { builder.setContentText(it) }
         builder.setProgress(100, progress.coerceIn(0, 100), indeterminate)
         
         if (hasNotificationPermission()) {
-            NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, builder.build())
+            NotificationManagerCompat.from(context).notify(notificationId, builder.build())
         }
     }
 
-    fun showComplete(title: String, videoUri: android.net.Uri? = null, mimeType: String = "video/mp4") {
+    fun showComplete(title: String, videoUri: android.net.Uri? = null, mimeType: String = "video/mp4", notificationId: Int = NOTIFICATION_ID) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         
         val contentIntent = videoUri?.let {
@@ -100,13 +101,13 @@ class NotificationHelper(private val context: Context) {
             .setAutoCancel(true)
             .setContentIntent(contentIntent)
         
-        notificationManager.cancel(NOTIFICATION_ID)
+        notificationManager.cancel(notificationId)
         if (hasNotificationPermission()) {
             notificationManager.notify(System.currentTimeMillis().toInt(), builder.build())
         }
     }
 
-    fun showError(message: String) {
+    fun showError(message: String, notificationId: Int = NOTIFICATION_ID) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setContentTitle("Download Failed")
@@ -117,7 +118,7 @@ class NotificationHelper(private val context: Context) {
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
         
-        notificationManager.cancel(NOTIFICATION_ID)
+        notificationManager.cancel(notificationId)
         if (hasNotificationPermission()) {
             notificationManager.notify(System.currentTimeMillis().toInt(), builder.build())
         }

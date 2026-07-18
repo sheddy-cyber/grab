@@ -57,7 +57,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:fontFamily="@font/manrope"
                 android:text="@string/app_name"
                 android:textColor="@color/textPrimary"
                 android:textSize="26sp"
@@ -68,7 +67,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:fontFamily="@font/manrope"
                 android:text="@string/app_description"
                 android:textColor="@color/textSecondary"
                 android:textSize="15sp" />
@@ -99,7 +97,6 @@
                 android:id="@+id/etUrl"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/manrope"
                 android:inputType="textUri"
                 android:paddingTop="16dp"
                 android:paddingBottom="16dp"
@@ -118,7 +115,6 @@
             style="@style/Widget.Material3.Button"
             android:layout_width="match_parent"
             android:layout_height="60dp"
-            android:fontFamily="@font/manrope"
             android:text="@string/download"
             android:textAllCaps="false"
             android:textColor="@color/textOnPrimary"
@@ -136,7 +132,6 @@
             android:layout_width="match_parent"
             android:layout_height="60dp"
             android:layout_marginTop="12dp"
-            android:fontFamily="@font/manrope"
             android:text="@string/paste_link"
             android:textAllCaps="false"
             android:textColor="@color/colorSecondary"
@@ -164,7 +159,6 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/manrope"
                 android:letterSpacing="0.1"
                 android:text="YT "
                 android:textColor="@color/brandYouTube"
@@ -174,7 +168,6 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/manrope"
                 android:text="\u00b7 "
                 android:textColor="@color/textSecondary"
                 android:textSize="13sp" />
@@ -182,7 +175,6 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/manrope"
                 android:letterSpacing="0.1"
                 android:text="X "
                 android:textColor="@color/brandTwitter"
@@ -192,7 +184,6 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/manrope"
                 android:text="\u00b7 "
                 android:textColor="@color/textSecondary"
                 android:textSize="13sp" />
@@ -200,7 +191,6 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/manrope"
                 android:letterSpacing="0.1"
                 android:text="IG "
                 android:textColor="@color/brandInstagramEnd"
@@ -210,7 +200,6 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/manrope"
                 android:text="\u00b7 "
                 android:textColor="@color/textSecondary"
                 android:textSize="13sp" />
@@ -218,7 +207,6 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/manrope"
                 android:letterSpacing="0.1"
                 android:text="FB"
                 android:textColor="@color/brandFacebook"
@@ -226,5 +214,14 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
+        <TextView
+            android:id="@+id/tvCreatedBy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:textColor="@color/textSecondary"
+            android:textSize="13sp" />
+
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>
+
