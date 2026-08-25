@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 # Cache for cobalt.directory instance list (avoids re-fetching on fallback)
 _cobalt_cache = {'urls': {}, 'ts': 0}
-_COBALT_CACHE_TTL = 120  # seconds
+_COBALT_CACHE_TTL = 300  # seconds — longer TTL to reduce API calls
 
 def _get_cobalt_instances(platform):
     """Fetch working Cobalt instances, with a short TTL cache."""
@@ -31,15 +31,21 @@ def _get_cobalt_instances(platform):
 
     browser_ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     logger.info("Fetching working Cobalt APIs from cobalt.directory...")
+    urls = []
     try:
         res = requests.get(
             'https://cobalt.directory/api/working?type=api',
             headers={'User-Agent': browser_ua},
-            timeout=6
+            timeout=8
         )
         if res.status_code == 200:
-            data = res.json().get('data', {})
-            # cobalt.directory groups instances by the service key it uses internally
+            data = res.json()
+            # cobalt.directory may return different response shapes:
+            #   - { "data": { "youtube": [...], "instagram": [...] } }  (grouped by service)
+            #   - { "data": [ { "url": "...", "services": [...] }, ... ] }  (flat list)
+            #   - [ { "api": "...", ... }, ... ]  (legacy flat array)
+            raw = data.get('data', data) if isinstance(data, dict) else data
+
             key_map = {
                 'youtube': 'youtube',
                 'twitter_x': 'twitter',
@@ -47,17 +53,46 @@ def _get_cobalt_instances(platform):
                 'instagram': 'instagram',
             }
             key = key_map.get(platform, 'twitter')
-            urls = data.get(key, [])
+
+            if isinstance(raw, dict):
+                # Grouped-by-service shape
+                urls = raw.get(key, [])
+                # If the values are dicts with a 'url' field, extract them
+                if urls and isinstance(urls[0], dict):
+                    urls = [u.get('url') or u.get('api') for u in urls if u.get('url') or u.get('api')]
+            elif isinstance(raw, list):
+                # Flat list of instance objects — filter by service support
+                for item in raw:
+                    if isinstance(item, str):
+                        urls.append(item)
+                    elif isinstance(item, dict):
+                        instance_url = item.get('url') or item.get('api') or item.get('endpoint')
+                        services = item.get('services', [])
+                        # Include if it supports our platform or has no service filter
+                        if instance_url:
+                            if not services or key in services or platform in services:
+                                urls.append(instance_url)
+
+            # Normalize URLs: strip trailing slashes, ensure they look like API endpoints
+            cleaned = []
+            for u in urls:
+                if isinstance(u, str) and u.startswith('http'):
+                    cleaned.append(u.rstrip('/'))
+            urls = cleaned
+
             logger.info(f"Found {len(urls)} working Cobalt instances for {key}")
-            if not isinstance(_cobalt_cache['urls'], dict):
-                _cobalt_cache['urls'] = {}
-            _cobalt_cache['urls'][cache_key] = urls
-            _cobalt_cache['ts'] = now
-            return list(urls)
     except Exception as e:
         logger.error(f"Failed to fetch from cobalt.directory: {str(e)}")
-    
-    return ['https://api.cobalt.tools']  # ultimate fallback
+
+    # Always include the official instance as a fallback
+    if 'https://api.cobalt.tools' not in urls:
+        urls.append('https://api.cobalt.tools')
+
+    if not isinstance(_cobalt_cache['urls'], dict):
+        _cobalt_cache['urls'] = {}
+    _cobalt_cache['urls'][cache_key] = urls
+    _cobalt_cache['ts'] = now
+    return list(urls)
 
 def extract_with_cobalt(video_url):
     """
@@ -98,7 +133,8 @@ def extract_with_cobalt(video_url):
         logger.info(f"Attempting Cobalt extraction using: {cobalt_url}")
         
         try:
-            response = requests.post(cobalt_url, json=payload, headers=headers, timeout=8)
+            # Increased timeout to 60s to handle cold starts on free hosting platforms (like Render)
+            response = requests.post(cobalt_url, json=payload, headers=headers, timeout=60)
             
             if response.status_code == 200:
                 data = response.json()
@@ -341,6 +377,14 @@ def extract_video():
             logger.warning(f"Cobalt extraction failed for {platform}. Falling back to yt-dlp...")
             
         # Strategy 2: For Twitter/X, or if Cobalt failed for YouTube/Facebook/Instagram, try yt-dlp
+        # On Hugging Face, Instagram/YouTube SSL connections often timeout.
+        # Use a shorter yt-dlp timeout to fail fast and avoid killing the Gunicorn worker.
+        is_hugging_face = 'SPACE_ID' in os.environ
+        if is_hugging_face and platform in ('instagram', 'youtube'):
+            ytdlp_socket_timeout = 8
+        else:
+            ytdlp_socket_timeout = 12
+
         # Configure yt-dlp options
         ydl_opts = {
             # Strictly prefer progressive MP4 (single file with audio+video) or native HLS (m3u8_native).
@@ -357,7 +401,7 @@ def extract_video():
             'extract_flat': False,
             'noplaylist': True,
             'cachedir': False,
-            'socket_timeout': 5,
+            'socket_timeout': ytdlp_socket_timeout,
             'retries': 0,
             'fragment_retries': 0,
             'extractor_args': {
@@ -425,12 +469,18 @@ def extract_video():
             yt_dlp_error = str(e)
             
         if yt_dlp_error:
-            # If yt-dlp failed, try Cobalt as a fallback
-            logger.warning(f"yt-dlp failed: {yt_dlp_error}. Trying Cobalt fallback...")
-            cobalt_res = extract_with_cobalt(video_url)
-            if cobalt_res:
-                logger.info(f"Successfully extracted video using Cobalt fallback: {cobalt_res['title']}")
-                return jsonify(finalize_download_response(cobalt_res))
+            # Only try Cobalt fallback if we didn't ALREADY try it as Strategy 1.
+            # For youtube/facebook/instagram, Cobalt was already attempted above —
+            # retrying with the same instances would just fail again.
+            already_tried_cobalt = platform in ('youtube', 'facebook', 'instagram')
+            if not already_tried_cobalt:
+                logger.warning(f"yt-dlp failed: {yt_dlp_error}. Trying Cobalt fallback...")
+                cobalt_res = extract_with_cobalt(video_url)
+                if cobalt_res:
+                    logger.info(f"Successfully extracted video using Cobalt fallback: {cobalt_res['title']}")
+                    return jsonify(finalize_download_response(cobalt_res))
+            else:
+                logger.warning(f"yt-dlp failed: {yt_dlp_error}. Cobalt was already tried — skipping redundant retry.")
             
             # If both failed, return the original yt-dlp error or bot block message
             error_msg = yt_dlp_error

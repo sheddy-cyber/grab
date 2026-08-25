@@ -1,4 +1,3 @@
-import React from "react";
 import { Download, Share2, Copy } from "lucide-react";
 import posthog from "posthog-js";
 import "./index.css";
