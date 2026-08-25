@@ -406,7 +406,7 @@ def extract_video():
             'fragment_retries': 0,
             'extractor_args': {
                 'youtube': {
-                    'clients': ['ios', 'android', 'mweb']
+                    'clients': ['web', 'tv']
                 },
                 'facebook': {
                     'use_graph_api': ['false']
