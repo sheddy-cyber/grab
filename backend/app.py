@@ -423,12 +423,23 @@ def extract_video():
         }
 
         # Diagnostic: check if PO token server is reachable (YouTube only)
+        # On Render's free tier, the background Node.js process can be starved of CPU
+        # during Gunicorn's startup and take 10+ seconds to bind to port 4416.
+        # We MUST wait for it before proceeding, or YouTube will block the request.
         if platform == 'youtube':
-            try:
-                pot_check = requests.get('http://127.0.0.1:4416/', timeout=2)
-                logger.info(f"PO token server check: HTTP {pot_check.status_code}")
-            except Exception as e:
-                logger.warning(f"PO token server unreachable: {e}")
+            pot_ready = False
+            for attempt in range(15):
+                try:
+                    pot_check = requests.get('http://127.0.0.1:4416/', timeout=2)
+                    if pot_check.status_code == 200 or pot_check.status_code == 404:
+                        logger.info(f"PO token server is ready (HTTP {pot_check.status_code}) on attempt {attempt+1}")
+                        pot_ready = True
+                        break
+                except Exception:
+                    time.sleep(1.0)
+            
+            if not pot_ready:
+                logger.warning("PO token server failed to start or is unreachable after 15 seconds!")
 
         # If a custom cookies file exists in the directory, use it to authenticate
         # This helps with Facebook/Instagram auth and YouTube bot detection
