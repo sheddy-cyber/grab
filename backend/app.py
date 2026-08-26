@@ -468,7 +468,7 @@ def extract_video():
             with yt_dlp.YoutubeDL(opts) as ydl:
                 return ydl.extract_info(url, download=False)
 
-        EXTRACT_TIMEOUT = 20  # seconds — must be well under Gunicorn's worker timeout
+        EXTRACT_TIMEOUT = 60  # seconds — increased for JS challenge + PO token overhead
         info = None
         yt_dlp_error = None
         
