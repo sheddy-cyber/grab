@@ -523,7 +523,29 @@ def extract_video():
             return jsonify({'error': 'Failed to extract video information'}), 500
 
         format_info = choose_single_file_format(info)
-        download_url = format_info.get('url')
+        
+        # If we failed to find a progressive format with BOTH audio and video,
+        # point the client to our backend's /download_merged endpoint so we can merge DASH streams.
+        # This is strictly required for Instagram Reels which only provide separated audio/video.
+        if not format_info or not has_audio_and_video(format_info):
+            logger.info("No single progressive file with audio found. Pointing to /download_merged fallback.")
+            download_url = f"{request.host_url.rstrip('/')}/download_merged?url={urllib.parse.quote(video_url)}"
+            # Return immediately with the proxy url
+            title = info.get('title', f'grab_am_video_{info.get("id", "unknown")}')
+            title = title.replace('/', '_').replace('\\', '_').replace(':', '_')
+            
+            return jsonify(finalize_download_response({
+                'download_url': download_url,
+                'title': title,
+                'duration': info.get('duration'),
+                'thumbnail': info.get('thumbnail'),
+                'ext': 'mp4',
+                'mime_type': 'video/mp4',
+                'headers': {},
+                'platform': platform,
+            }))
+
+        download_url = format_info.get('url') or info.get('url')
         
         if not download_url:
             logger.error("No download URL found in extracted info")
@@ -761,6 +783,88 @@ def proxy_download():
         return response
     except Exception as e:
         logger.error(f"Proxy error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/download_merged', methods=['GET'])
+def download_merged():
+    """
+    Downloads and merges the video/audio locally on the server using yt-dlp and ffmpeg,
+    then serves the merged file to the client. This is a fallback for platforms like
+    Instagram that only provide separated DASH streams.
+    """
+    video_url = request.args.get('url')
+    if not video_url:
+        return jsonify({'error': 'Missing url parameter'}), 400
+        
+    if not is_supported_video_url(video_url):
+        return jsonify({'error': 'Unsupported URL.'}), 400
+
+    import tempfile
+    import uuid
+    import threading
+
+    # Create a unique temporary directory for this download
+    temp_dir = tempfile.mkdtemp()
+    file_id = str(uuid.uuid4())
+    output_template = os.path.join(temp_dir, f"{file_id}.%(ext)s")
+    
+    # We use the standard web client setup with cookies
+    ydl_opts = {
+        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+        'outtmpl': output_template,
+        'quiet': True,
+        'no_warnings': True,
+        'cookiefile': 'cookies.txt' if os.path.exists('cookies.txt') else None,
+        'merge_output_format': 'mp4',
+    }
+    
+    # Inject js_runtimes for YouTube just in case
+    platform = detect_platform(video_url)
+    if platform == 'youtube':
+        ydl_opts['js_runtimes'] = {'node': {}}
+        ydl_opts['extractor_args'] = {
+            'youtube': {
+                'player_client': ['web', 'tv'],
+                'po_token': ['web+bgutil_http:base_url=http://127.0.0.1:4416']
+            }
+        }
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(video_url, download=True)
+            
+        # yt-dlp saves the merged file with the extension we specified
+        final_file = os.path.join(temp_dir, f"{file_id}.mp4")
+        
+        if not os.path.exists(final_file):
+            # Try to find what it actually saved as if mp4 failed
+            files = os.listdir(temp_dir)
+            if not files:
+                raise Exception("Download failed, no files saved.")
+            final_file = os.path.join(temp_dir, files[0])
+
+        title = info.get('title', 'video').replace('/', '_').replace('"', '')
+        filename = f"{title}.mp4"
+
+        # Read the file to memory so we can delete the temp directory immediately
+        with open(final_file, 'rb') as f:
+            file_data = f.read()
+            
+        # Clean up
+        import shutil
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
+        return Response(
+            file_data,
+            mimetype="video/mp4",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+        )
+
+    except Exception as e:
+        logger.error(f"Merged download error: {str(e)}")
+        # Clean up on error
+        import shutil
+        shutil.rmtree(temp_dir, ignore_errors=True)
         return jsonify({'error': str(e)}), 500
 
 @app.route('/health', methods=['GET'])
