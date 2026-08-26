@@ -601,8 +601,11 @@ def choose_single_file_format(info):
     if progressive_candidates:
         def score(fmt):
             ext = (fmt.get('ext') or '').lower()
+            vcodec = (fmt.get('vcodec') or '').lower()
+            is_h264 = 1 if vcodec.startswith('avc') else 0
             return (
                 1 if ext == 'mp4' else 0,
+                is_h264, # Prefer H.264 for WhatsApp compatibility
                 fmt.get('height') or 0,
                 fmt.get('width') or 0,
                 fmt.get('tbr') or 0,
@@ -621,8 +624,11 @@ def choose_single_file_format(info):
     if video_only_candidates:
         def score(fmt):
             ext = (fmt.get('ext') or '').lower()
+            vcodec = (fmt.get('vcodec') or '').lower()
+            is_h264 = 1 if vcodec.startswith('avc') else 0
             return (
                 1 if ext == 'mp4' else 0,
+                is_h264, # Prefer H.264 for WhatsApp compatibility
                 fmt.get('height') or 0,
                 fmt.get('width') or 0,
                 fmt.get('tbr') or 0,
@@ -810,7 +816,8 @@ def download_merged():
     
     # We use the standard web client setup with cookies
     ydl_opts = {
-        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+        # Prefer H.264 (avc) for compatibility with WhatsApp and older devices
+        'format': 'bestvideo[ext=mp4][vcodec^=avc]+bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio/best[ext=mp4]/best',
         'outtmpl': output_template,
         'quiet': True,
         'no_warnings': True,
