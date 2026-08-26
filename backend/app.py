@@ -411,10 +411,7 @@ def extract_video():
             'extractor_args': {
                 'youtube': {
                     'player_client': ['web', 'tv'],
-                    'po_token': ['web+bgutil_script_node']
-                },
-                'youtubepot-bgutilscript': {
-                    'script_path': ['/home/user/app/bgutil-server/build/generate_once.js']
+                    'po_token': ['web+bgutil_http:base_url=http://127.0.0.1:4416']
                 },
                 'facebook': {
                     'use_graph_api': ['false']
@@ -844,10 +841,7 @@ def download_merged():
         ydl_opts['extractor_args'] = {
             'youtube': {
                 'player_client': ['web', 'tv'],
-                'po_token': ['web+bgutil_script_node']
-            },
-            'youtubepot-bgutilscript': {
-                'script_path': ['/home/user/app/bgutil-server/build/generate_once.js']
+                'po_token': ['web+bgutil_http:base_url=http://127.0.0.1:4416']
             }
         }
 
