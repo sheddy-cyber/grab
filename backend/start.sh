@@ -20,4 +20,4 @@ fi
 # Start gunicorn (use PORT env var from Render, fallback to 7860)
 PORT="${PORT:-7860}"
 echo "Starting gunicorn on port $PORT..."
-exec gunicorn app:app --bind "0.0.0.0:$PORT" --timeout 120 --graceful-timeout 30 --workers 2 --threads 4
+exec gunicorn app:app --bind "0.0.0.0:$PORT" --timeout 3600 --graceful-timeout 30 --workers 2 --threads 4
