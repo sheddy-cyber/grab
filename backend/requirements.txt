@@ -1,6 +1,7 @@
 flask==3.0.0
 flask-cors==4.0.0
 yt-dlp>=2026.08.19
+yt-dlp-ejs
 bgutil-ytdlp-pot-provider
 gunicorn==21.2.0
 requests==2.31.0

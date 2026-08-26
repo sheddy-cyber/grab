@@ -405,6 +405,9 @@ def extract_video():
             'socket_timeout': ytdlp_socket_timeout,
             'retries': 0,
             'fragment_retries': 0,
+            'js_runtimes': {
+                'node': {}
+            },
             'extractor_args': {
                 'youtube': {
                     'player_client': ['web', 'tv'],
