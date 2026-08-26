@@ -857,8 +857,14 @@ def download_merged():
                 raise Exception("Download failed, no files saved.")
             final_file = os.path.join(temp_dir, files[0])
 
-        title = info.get('title', 'video').replace('/', '_').replace('"', '')
-        filename = f"{title}.mp4"
+        # Strip non-ASCII characters to prevent Gunicorn latin-1 encoding crashes in headers
+        # The frontend app already receives the full UTF-8 title via the JSON response anyway
+        ascii_title = info.get('title', 'video').encode('ascii', 'ignore').decode('ascii')
+        ascii_title = ascii_title.replace('/', '_').replace('"', '').strip()
+        if not ascii_title:
+            ascii_title = "video"
+            
+        filename = f"{ascii_title}.mp4"
 
         # Stream the file from disk to avoid OOM kills on Render's 512MB RAM limit,
         # and delete the temporary directory once the stream is fully consumed.
