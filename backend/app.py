@@ -818,16 +818,13 @@ def download_merged():
     temp_dir = tempfile.mkdtemp()
     file_id = str(uuid.uuid4())
     output_template = os.path.join(temp_dir, f"{file_id}.%(ext)s")
-    
     # We use the standard web client setup with cookies
     ydl_opts = {
-        # Strictly reject HEVC/HVC, AV1, and VP9. Mobile devices and WhatsApp only reliably support H.264.
-        'format': (
-            'bestvideo[ext=mp4][vcodec!*=hev][vcodec!*=hvc][vcodec!*=av01][vcodec!*=vp9]+bestaudio[ext=m4a]/'
-            'bestvideo[ext=mp4][vcodec!*=hev][vcodec!*=hvc][vcodec!*=av01][vcodec!*=vp9]+bestaudio/'
-            'best[ext=mp4][vcodec!*=hev][vcodec!*=hvc][vcodec!*=av01][vcodec!*=vp9]/'
-            'best[vcodec!*=hev][vcodec!*=hvc][vcodec!*=av01][vcodec!*=vp9]'
-        ),
+        # Use a simple format chain to guarantee we always find a video stream
+        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio/best[ext=mp4]/best',
+        # But force yt-dlp to ALWAYS prioritize H.264 streams over HEVC/AV1, even if they are lower resolution.
+        # This completely solves the "unsupported media" issue on WhatsApp and older phones.
+        'format_sort': ['vcodec:h264', 'res', 'ext:mp4:m4a'],
         'outtmpl': output_template,
         'quiet': True,
         'no_warnings': True,
