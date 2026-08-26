@@ -410,8 +410,8 @@ def extract_video():
             },
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['ios', 'tv'],
-                    'po_token': ['ios+bgutil_http:base_url=http://127.0.0.1:4416']
+                    'player_client': ['web', 'tv'],
+                    'po_token': ['web+bgutil_http:base_url=http://127.0.0.1:4416']
                 },
                 'facebook': {
                     'use_graph_api': ['false']
@@ -431,15 +431,13 @@ def extract_video():
                 logger.warning(f"PO token server unreachable: {e}")
 
         # If a custom cookies file exists in the directory, use it to authenticate
-        # NOTE: Skip cookies for YouTube — expired/invalid cookies poison the session
-        # and prevent the PO token server from working. The PO token handles YouTube auth.
+        # This helps with Facebook/Instagram auth and YouTube bot detection
+        # (PO token server handles the cryptographic challenge; cookies provide the session)
         cookies_loaded = False
-        if os.path.exists('cookies.txt') and platform != 'youtube':
+        if os.path.exists('cookies.txt'):
             logger.info("Loading custom cookies from cookies.txt")
             ydl_opts['cookiefile'] = 'cookies.txt'
             cookies_loaded = True
-        elif platform == 'youtube':
-            logger.info("Skipping cookies for YouTube to allow anonymous ios client bypass")
         
         # Also try browser cookies for platforms that need them (Facebook, Instagram, YouTube)
         # This can be enabled via environment variable
