@@ -800,6 +800,11 @@ def proxy_download():
             if header_name in upstream.headers:
                 response.headers[header_name] = upstream.headers[header_name]
 
+        from email.utils import formatdate
+        current_time = formatdate(timeval=None, localtime=False, usegmt=True)
+        response.headers['Last-Modified'] = current_time
+        response.headers['Date'] = current_time
+
         return response
     except Exception as e:
         logger.error(f"Proxy error: {str(e)}")
@@ -837,6 +842,11 @@ def download_merged():
         'no_warnings': True,
         'cookiefile': 'cookies.txt' if os.path.exists('cookies.txt') else None,
         'merge_output_format': 'mp4',
+        'no_mtime': True, # Don't set file modification time to upload date
+        'postprocessor_args': {
+            # Strip metadata so gallery apps don't sort videos years back
+            'ffmpeg': ['-map_metadata', '-1', '-metadata', 'creation_time=now']
+        }
     }
     
     # Inject js_runtimes for YouTube just in case
