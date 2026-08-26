@@ -7,12 +7,12 @@ if [ -f "bgutil-server/build/main.js" ]; then
     POT_PID=$!
     echo "PO Token server started (PID $POT_PID)"
     # Give it a moment to initialize
-    sleep 2
+    sleep 5
 elif [ -f "bgutil-server/main.js" ]; then
     node bgutil-server/main.js &
     POT_PID=$!
     echo "PO Token server started (PID $POT_PID)"
-    sleep 2
+    sleep 5
 else
     echo "WARNING: bgutil server not found — YouTube downloads may fail"
 fi
