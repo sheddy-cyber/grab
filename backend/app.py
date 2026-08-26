@@ -410,8 +410,8 @@ def extract_video():
             },
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['web', 'tv'],
-                    'po_token': ['web+bgutil_http:base_url=http://127.0.0.1:4416']
+                    'player_client': ['ios', 'tv'],
+                    'po_token': ['ios+bgutil_http:base_url=http://127.0.0.1:4416']
                 },
                 'facebook': {
                     'use_graph_api': ['false']
