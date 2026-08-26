@@ -396,8 +396,9 @@ def extract_video():
                 'best'
             ),
             'format_sort': ['res', 'ext:mp4:m4a', 'proto:http'],
-            'quiet': True,
-            'no_warnings': True,
+            'quiet': not (platform == 'youtube'),  # verbose for YouTube to debug PO token
+            'no_warnings': not (platform == 'youtube'),
+            'verbose': (platform == 'youtube'),  # enable debug output for YouTube
             'extract_flat': False,
             'noplaylist': True,
             'cachedir': False,
@@ -416,6 +417,14 @@ def extract_video():
                 }
             }
         }
+
+        # Diagnostic: check if PO token server is reachable (YouTube only)
+        if platform == 'youtube':
+            try:
+                pot_check = requests.get('http://127.0.0.1:4416/', timeout=2)
+                logger.info(f"PO token server check: HTTP {pot_check.status_code}")
+            except Exception as e:
+                logger.warning(f"PO token server unreachable: {e}")
 
         # If a custom cookies file exists in the directory, use it to authenticate
         # This helps with Facebook/Instagram auth and YouTube bot detection
