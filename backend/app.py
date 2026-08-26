@@ -8,6 +8,8 @@ import urllib.parse
 import time
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from urllib.parse import urlparse, parse_qs
+import subprocess
+import shutil
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -15,6 +17,41 @@ CORS(app)  # Enable CORS for all routes
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# --- Launch bgutil PO Token server for YouTube bot-detection bypass ---
+def _start_pot_server():
+    """Start the bgutil PO token HTTP server as a background process."""
+    node_bin = shutil.which('node')
+    if not node_bin:
+        logger.warning("Node.js not found — PO token server will not start. YouTube downloads may fail on datacenter IPs.")
+        return None
+    try:
+        # Find the installed bgutil server script
+        import bgutil_ytdlp_pot_provider
+        server_dir = os.path.join(os.path.dirname(bgutil_ytdlp_pot_provider.__file__), 'server')
+        server_script = os.path.join(server_dir, 'build', 'main.js')
+        if not os.path.exists(server_script):
+            # Try alternative location
+            server_script = os.path.join(server_dir, 'main.js')
+        if not os.path.exists(server_script):
+            logger.warning(f"bgutil server script not found at {server_dir}. YouTube PO tokens unavailable.")
+            return None
+        proc = subprocess.Popen(
+            [node_bin, server_script],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            cwd=server_dir
+        )
+        logger.info(f"Started bgutil PO token server (PID {proc.pid}) on port 4416")
+        return proc
+    except ImportError:
+        logger.warning("bgutil-ytdlp-pot-provider not installed. YouTube PO tokens unavailable.")
+        return None
+    except Exception as e:
+        logger.warning(f"Failed to start PO token server: {e}")
+        return None
+
+_pot_server_proc = _start_pot_server()
 
 # Cache for cobalt.directory instance list (avoids re-fetching on fallback)
 _cobalt_cache = {'urls': {}, 'ts': 0}
@@ -405,6 +442,9 @@ def extract_video():
             'retries': 0,
             'fragment_retries': 0,
             'extractor_args': {
+                'youtube': {
+                    'po_token': ['web+bgutil_http:base_url=http://127.0.0.1:4416']
+                },
                 'facebook': {
                     'use_graph_api': ['false']
                 },
