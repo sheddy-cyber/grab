@@ -416,11 +416,16 @@ def extract_video():
 
         # If a custom cookies file exists in the directory, use it to authenticate
         # This is especially important for Facebook and Instagram
+        # NOTE: Do NOT load cookies for YouTube — it forces yt-dlp off the
+        # visionos client, which is the only client that bypasses datacenter
+        # bot detection without authentication.
         cookies_loaded = False
-        if os.path.exists('cookies.txt'):
+        if os.path.exists('cookies.txt') and platform != 'youtube':
             logger.info("Loading custom cookies from cookies.txt")
             ydl_opts['cookiefile'] = 'cookies.txt'
             cookies_loaded = True
+        elif platform == 'youtube':
+            logger.info("Skipping cookies for YouTube to allow visionos client bypass")
         
         # Also try browser cookies for platforms that need them (Facebook, Instagram, YouTube)
         # This can be enabled via environment variable
@@ -486,24 +491,8 @@ def extract_video():
             is_hugging_face = 'SPACE_ID' in os.environ
 
             if is_bot_detection and not is_hugging_face:
-                logger.warning("YouTube bot detection triggered. Attempting to bypass using local browser cookies...")
-                browsers = ['chrome', 'edge', 'firefox', 'brave']
-                success = False
-                
-                for browser in browsers:
-                    logger.info(f"Trying cookies from: {browser}")
-                    ydl_opts['cookiesfrombrowser'] = (browser, )
-                    try:
-                        info = _extract(video_url, ydl_opts)
-                        success = True
-                        logger.info(f"Successfully bypassed with {browser} cookies!")
-                        break
-                    except Exception as browser_e:
-                        logger.debug(f"Failed with {browser} cookies: {str(browser_e)}")
-                
-                if not success:
-                    logger.error("Failed to bypass bot detection with local browser cookies.")
-                    return jsonify({'error': 'YouTube bot detection blocked the request. Please export a cookies.txt file.'}), 500
+                logger.error("YouTube bot detection blocked the request on Render.")
+                return jsonify({'error': 'YouTube bot detection blocked the request. The visionos client bypass may not be available in this yt-dlp version.'}), 500
             elif is_bot_detection and is_hugging_face:
                 logger.error("YouTube bot detection blocked the request on Hugging Face.")
                 return jsonify({'error': 'YouTube bot detection blocked the request. Please upload a cookies.txt file to your Hugging Face Space.'}), 500
