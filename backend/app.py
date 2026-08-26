@@ -595,10 +595,18 @@ def extract_video():
         logger.error(f"Error extracting video: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+def is_h264_codec(vcodec):
+    # yt-dlp uses 'avc1', 'avc', or 'h264' for H.264. 
+    # Reject 'hev1', 'hvc1' (H.265/HEVC) and 'av01' (AV1)
+    vcodec = (vcodec or '').lower()
+    if not vcodec or vcodec == 'none':
+        return False
+    return 'avc' in vcodec or 'h264' in vcodec
+
 def choose_single_file_format(info):
     """Return the best direct format that yt-dlp can download to a single playable file."""
     # First check if the main info dict itself is a valid direct format
-    if info.get('url') and has_audio_and_video(info) and is_direct_progressive_format(info):
+    if info.get('url') and has_audio_and_video(info) and is_direct_progressive_format(info) and is_h264_codec(info.get('vcodec')):
         return info
 
     formats = info.get('formats') or []
@@ -606,17 +614,14 @@ def choose_single_file_format(info):
     # Priority 1: Progressive formats with both audio and video (single file, directly playable)
     progressive_candidates = [
         fmt for fmt in formats
-        if fmt.get('url') and has_audio_and_video(fmt) and is_direct_progressive_format(fmt)
+        if fmt.get('url') and has_audio_and_video(fmt) and is_direct_progressive_format(fmt) and is_h264_codec(fmt.get('vcodec'))
     ]
 
     if progressive_candidates:
         def score(fmt):
             ext = (fmt.get('ext') or '').lower()
-            vcodec = (fmt.get('vcodec') or '').lower()
-            is_h264 = 1 if vcodec.startswith('avc') else 0
             return (
                 1 if ext == 'mp4' else 0,
-                is_h264, # Prefer H.264 for WhatsApp compatibility
                 fmt.get('height') or 0,
                 fmt.get('width') or 0,
                 fmt.get('tbr') or 0,
@@ -628,18 +633,15 @@ def choose_single_file_format(info):
     video_only_candidates = [
         fmt for fmt in formats
         if fmt.get('url')
-        and fmt.get('vcodec') not in (None, 'none')
         and is_direct_progressive_format(fmt)
+        and is_h264_codec(fmt.get('vcodec'))
     ]
 
     if video_only_candidates:
         def score(fmt):
             ext = (fmt.get('ext') or '').lower()
-            vcodec = (fmt.get('vcodec') or '').lower()
-            is_h264 = 1 if vcodec.startswith('avc') else 0
             return (
                 1 if ext == 'mp4' else 0,
-                is_h264, # Prefer H.264 for WhatsApp compatibility
                 fmt.get('height') or 0,
                 fmt.get('width') or 0,
                 fmt.get('tbr') or 0,
@@ -648,14 +650,15 @@ def choose_single_file_format(info):
         return max(video_only_candidates, key=score)
 
     # Fallback: check main info dict
-    if info.get('url') and is_direct_progressive_format(info):
+    if info.get('url') and is_direct_progressive_format(info) and is_h264_codec(info.get('vcodec')):
         return info
 
-    # Last resort: return any format that has a URL and is progressive
+    # Last resort: return any format that has a URL, is progressive, and is H.264
     for fmt in formats:
-        if fmt.get('url') and is_direct_progressive_format(fmt):
+        if fmt.get('url') and is_direct_progressive_format(fmt) and is_h264_codec(fmt.get('vcodec')):
             return fmt
-    if info.get('url') and is_direct_progressive_format(info):
+            
+    if info.get('url') and is_direct_progressive_format(info) and is_h264_codec(info.get('vcodec')):
         return info
 
     return {}
