@@ -1,10 +1,13 @@
 # Use a lightweight official Python image
 FROM python:3.11-slim
 
-# Install system dependencies (like ffmpeg, curl)
+# Install system dependencies (ffmpeg, curl, git, Node.js)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     curl \
+    git \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 # Set up a new user "user" with UID 1000
@@ -23,14 +26,26 @@ WORKDIR $HOME/app
 # Copy dependency file first for caching
 COPY --chown=user requirements.txt .
 
-# Install dependencies in user space
+# Install Python dependencies in user space
 RUN pip install --no-cache-dir --user -r requirements.txt
+
+# Clone and build the bgutil PO Token server for YouTube bot-detection bypass
+RUN git clone --depth 1 https://github.com/Brainicism/bgutil-ytdlp-pot-provider.git bgutil-repo \
+    && mv bgutil-repo/server bgutil-server \
+    && rm -rf bgutil-repo \
+    && cd bgutil-server \
+    && npm ci --production \
+    && npx tsc 2>/dev/null || true
 
 # Copy the rest of the application files
 COPY --chown=user . .
 
-# Hugging Face runs on port 7860 by default
+# Copy start script and make it executable
+COPY --chown=user start.sh .
+RUN chmod +x start.sh
+
+# Expose port (Render uses PORT env var, HF uses 7860)
 EXPOSE 7860
 
-# Command to run the application using gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:7860", "--timeout", "120", "app:app"]
+# Start PO token server + gunicorn via start.sh
+CMD ["bash", "start.sh"]
