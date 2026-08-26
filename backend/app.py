@@ -866,6 +866,9 @@ def download_merged():
             
         filename = f"{ascii_title}.mp4"
 
+        # Get exact file size to prevent "unsupported media" corruption on mobile download managers
+        file_size = os.path.getsize(final_file)
+
         # Stream the file from disk to avoid OOM kills on Render's 512MB RAM limit,
         # and delete the temporary directory once the stream is fully consumed.
         def stream_and_cleanup():
@@ -880,7 +883,10 @@ def download_merged():
         return Response(
             stream_and_cleanup(),
             mimetype="video/mp4",
-            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+                "Content-Length": str(file_size)
+            }
         )
 
     except Exception as e:
