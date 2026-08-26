@@ -1,0 +1,1 @@
+﻿import urllib.request, json; req = urllib.request.Request('https://cobalt.qewertyy.dev/', headers={'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json', 'Content-Type': 'application/json'}, data=b'{"url": "https://www.instagram.com/reel/C-0XpSJo8c7/"}'); print(urllib.request.urlopen(req).read().decode())
