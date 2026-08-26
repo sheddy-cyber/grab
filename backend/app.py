@@ -821,8 +821,13 @@ def download_merged():
     
     # We use the standard web client setup with cookies
     ydl_opts = {
-        # Prefer H.264 (avc) for compatibility with WhatsApp and older devices
-        'format': 'bestvideo[ext=mp4][vcodec^=avc]+bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio/best[ext=mp4]/best',
+        # Strictly reject HEVC/HVC, AV1, and VP9. Mobile devices and WhatsApp only reliably support H.264.
+        'format': (
+            'bestvideo[ext=mp4][vcodec!*=hev][vcodec!*=hvc][vcodec!*=av01][vcodec!*=vp9]+bestaudio[ext=m4a]/'
+            'bestvideo[ext=mp4][vcodec!*=hev][vcodec!*=hvc][vcodec!*=av01][vcodec!*=vp9]+bestaudio/'
+            'best[ext=mp4][vcodec!*=hev][vcodec!*=hvc][vcodec!*=av01][vcodec!*=vp9]/'
+            'best[vcodec!*=hev][vcodec!*=hvc][vcodec!*=av01][vcodec!*=vp9]'
+        ),
         'outtmpl': output_template,
         'quiet': True,
         'no_warnings': True,
