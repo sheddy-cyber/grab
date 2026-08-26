@@ -407,6 +407,7 @@ def extract_video():
             'fragment_retries': 0,
             'extractor_args': {
                 'youtube': {
+                    'clients': ['web', 'tv'],
                     'po_token': ['web+bgutil_http:base_url=http://127.0.0.1:4416']
                 },
                 'facebook': {
