@@ -622,10 +622,19 @@ def choose_single_file_format(info):
     return {}
 
 def has_audio_and_video(format_info):
-    return (
-        format_info.get('vcodec') not in (None, 'none') and
-        format_info.get('acodec') not in (None, 'none')
-    )
+    has_video = format_info.get('vcodec') not in (None, 'none')
+    has_audio = format_info.get('acodec') not in (None, 'none')
+    
+    if has_video and has_audio:
+        return True
+        
+    # Heuristic: yt-dlp sometimes fails to report acodec for Instagram/Twitter progressive MP4s.
+    # If the format is a direct video (not a DASH 'video-only' stream), assume it has embedded audio.
+    format_id = str(format_info.get('format_id') or '').lower()
+    if has_video and 'dash' not in format_id and 'video' not in format_id:
+        return True
+        
+    return False
 
 def is_supported_video_url(url):
     """Validate if the URL points to a supported Twitter/X, YouTube, Facebook, or Instagram video."""
