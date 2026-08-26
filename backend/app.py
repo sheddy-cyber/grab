@@ -535,11 +535,13 @@ def extract_video():
 
         format_info = choose_single_file_format(info)
         
-        # If we failed to find a progressive format with BOTH audio and video,
-        # point the client to our backend's /download_merged endpoint so we can merge DASH streams.
-        # This is strictly required for Instagram Reels which only provide separated audio/video.
-        if not format_info or not has_audio_and_video(format_info):
-            logger.info("No single progressive file with audio found. Pointing to /download_merged fallback.")
+        # YouTube physically stopped providing 1080p progressive (single-file) streams years ago.
+        # Its progressive streams are hard-capped at 720p (often defaulting to 360p).
+        # To match Instagram's high quality, we must intentionally bypass progressive 
+        # formats and send YouTube directly to the backend merger to mux 1080p DASH streams.
+        if platform == 'youtube' or not format_info or not has_audio_and_video(format_info):
+            reason = "YouTube high-quality enforcement" if platform == 'youtube' else "No single progressive file with audio found"
+            logger.info(f"{reason}. Pointing to /download_merged fallback.")
             download_url = f"{request.host_url.rstrip('/')}/download_merged?url={urllib.parse.quote(video_url)}"
             # Return immediately with the proxy url
             title = info.get('title', f'grab_am_video_{info.get("id", "unknown")}')
@@ -877,16 +879,19 @@ def download_merged():
         title = info.get('title', 'video').replace('/', '_').replace('"', '')
         filename = f"{title}.mp4"
 
-        # Read the file to memory so we can delete the temp directory immediately
-        with open(final_file, 'rb') as f:
-            file_data = f.read()
-            
-        # Clean up
-        import shutil
-        shutil.rmtree(temp_dir, ignore_errors=True)
+        # Stream the file from disk to avoid OOM kills on Render's 512MB RAM limit,
+        # and delete the temporary directory once the stream is fully consumed.
+        def stream_and_cleanup():
+            try:
+                with open(final_file, 'rb') as f:
+                    while chunk := f.read(8192):
+                        yield chunk
+            finally:
+                import shutil
+                shutil.rmtree(temp_dir, ignore_errors=True)
 
         return Response(
-            file_data,
+            stream_and_cleanup(),
             mimetype="video/mp4",
             headers={"Content-Disposition": f'attachment; filename="{filename}"'}
         )
