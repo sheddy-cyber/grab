@@ -427,13 +427,15 @@ def extract_video():
                 logger.warning(f"PO token server unreachable: {e}")
 
         # If a custom cookies file exists in the directory, use it to authenticate
-        # This helps with Facebook/Instagram auth and YouTube bot detection
-        # (PO token server handles the cryptographic challenge; cookies provide the session)
+        # NOTE: Skip cookies for YouTube — expired/invalid cookies poison the session
+        # and prevent the PO token server from working. The PO token handles YouTube auth.
         cookies_loaded = False
-        if os.path.exists('cookies.txt'):
+        if os.path.exists('cookies.txt') and platform != 'youtube':
             logger.info("Loading custom cookies from cookies.txt")
             ydl_opts['cookiefile'] = 'cookies.txt'
             cookies_loaded = True
+        elif platform == 'youtube':
+            logger.info("Skipping cookies for YouTube — PO token server handles authentication")
         
         # Also try browser cookies for platforms that need them (Facebook, Instagram, YouTube)
         # This can be enabled via environment variable
