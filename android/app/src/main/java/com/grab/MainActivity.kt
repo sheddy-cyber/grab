@@ -139,11 +139,16 @@ class MainActivity : AppCompatActivity() {
         val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
         builder.setTitle("Backend Settings")
         
+        val inputLayout = com.google.android.material.textfield.TextInputLayout(this).apply {
+            hint = "Backend URL"
+            boxBackgroundMode = com.google.android.material.textfield.TextInputLayout.BOX_BACKGROUND_OUTLINE
+        }
+        
         val input = com.google.android.material.textfield.TextInputEditText(this).apply {
             setText(currentUrl)
-            hint = "https://grab-am.onrender.com"
             inputType = android.text.InputType.TYPE_TEXT_VARIATION_URI
         }
+        inputLayout.addView(input)
         
         val container = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.VERTICAL
@@ -151,14 +156,14 @@ class MainActivity : AppCompatActivity() {
                 android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
                 android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply {
-                setMargins(48, 24, 48, 24)
+                val px = (16 * resources.displayMetrics.density).toInt()
+                setMargins(px, px, px, 0)
             }
-            input.layoutParams = params
-            addView(input)
+            inputLayout.layoutParams = params
+            addView(inputLayout)
         }
         
         builder.setView(container)
-        builder.setMessage("Enter the base URL of a custom backend if self-hosting. Most users don't need to change this.")
         
         builder.setPositiveButton("Save") { dialog, _ ->
             val newUrl = input.text.toString().trim()
@@ -175,9 +180,9 @@ class MainActivity : AppCompatActivity() {
             dialog.cancel()
         }
         
-        builder.setNeutralButton("Reset to Default") { dialog, _ ->
+        builder.setNeutralButton("Reset") { dialog, _ ->
             sharedPrefs.edit().putString("backend_url", DownloadService.DEFAULT_BACKEND_URL).apply()
-            Toast.makeText(this, "Reset to default backend", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Reset to default", Toast.LENGTH_SHORT).show()
             dialog.dismiss()
         }
         
