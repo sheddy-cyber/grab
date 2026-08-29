@@ -239,6 +239,9 @@ class DownloadService : Service() {
                 
                 if (errorMsg != null) {
                     notificationHelper.showError(errorMsg, downloadId)
+                    withContext(Dispatchers.Main) {
+                        android.widget.Toast.makeText(this@DownloadService, errorMsg, android.widget.Toast.LENGTH_LONG).show()
+                    }
                 } else if (resultTitle != null) {
                     notificationHelper.showComplete(resultTitle, resultUri, resultMimeType ?: "video/mp4", downloadId)
                     withContext(Dispatchers.Main) {
