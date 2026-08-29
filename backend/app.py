@@ -389,24 +389,20 @@ def extract_video():
         logger.info(f"Extracting video from: {video_url}")
         platform = detect_platform(video_url)
         
-        # Strategy 1: For YouTube and Instagram, prioritize Cobalt.
+        # Strategy 1: For YouTube, prioritize Cobalt.
         # - YouTube: bypasses datacenter IP blocks.
-        # - Instagram: yt-dlp frequently needs authenticated cookies for
-        #   these platforms, so Cobalt (which proxies through its own session
-        #   handling) tends to succeed far more often without any cookies file.
-        # (Facebook is excluded here because Cobalt's FB extractor often returns out-of-sync or low quality streams, so we rely on backend ffmpeg merging).
-        if platform in ('youtube', 'instagram'):
+        if platform in ('youtube',):
             cobalt_res = extract_with_cobalt(video_url)
             if cobalt_res:
                 logger.info(f"Successfully extracted video using Cobalt: {cobalt_res['title']}")
                 return jsonify(finalize_download_response(cobalt_res))
             logger.warning(f"Cobalt extraction failed for {platform}. Falling back to yt-dlp...")
             
-        # Strategy 2: For Twitter/X, Facebook, or if Cobalt failed for YouTube/Instagram, try yt-dlp
-        # On Hugging Face, Instagram/YouTube SSL connections often timeout.
+        # Strategy 2: For Twitter/X, Facebook, Instagram, or if Cobalt failed for YouTube, try yt-dlp
+        # On Hugging Face, YouTube SSL connections often timeout.
         # Use a shorter yt-dlp timeout to fail fast and avoid killing the Gunicorn worker.
         is_hugging_face = 'SPACE_ID' in os.environ
-        if is_hugging_face and platform in ('instagram', 'youtube'):
+        if is_hugging_face and platform in ('youtube',):
             ytdlp_socket_timeout = 8
         else:
             ytdlp_socket_timeout = 12
