@@ -820,11 +820,11 @@ def download_merged():
     # Inject platform-specific options
     platform = detect_platform(video_url)
     
-    try:
-        import imageio_ffmpeg
-        ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
-    except Exception:
-        ffmpeg_path = None
+    # Path to the static ffmpeg downloaded by build.sh
+    ffmpeg_path = os.path.join(os.getcwd(), 'ffmpeg')
+    if not os.path.exists(ffmpeg_path):
+        # Fallback to system ffmpeg if local binary isn't found
+        ffmpeg_path = 'ffmpeg'
     
     ydl_opts = {
         # Use a simple format chain to guarantee we always find a video stream
