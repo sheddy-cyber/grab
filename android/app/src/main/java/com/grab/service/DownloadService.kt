@@ -32,7 +32,7 @@ class DownloadService : Service() {
         const val ACTION_RESUME_DOWNLOAD = "com.grab.RESUME_DOWNLOAD"
         const val EXTRA_URL = "extra_url"
         const val EXTRA_DOWNLOAD_ID = "extra_download_id"
-        const val DEFAULT_BACKEND_URL = "https://sheddycyber-grab-am.hf.space"
+        const val DEFAULT_BACKEND_URL = "https://grab-am.onrender.com"
         
         private val activeDownloadCount = java.util.concurrent.atomic.AtomicInteger(0)
         

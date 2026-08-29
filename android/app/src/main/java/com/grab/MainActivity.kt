@@ -141,7 +141,7 @@ class MainActivity : AppCompatActivity() {
         
         val input = com.google.android.material.textfield.TextInputEditText(this).apply {
             setText(currentUrl)
-            hint = "https://sheddycyber-grab-am.hf.space"
+            hint = "https://grab-am.onrender.com"
             inputType = android.text.InputType.TYPE_TEXT_VARIATION_URI
         }
         
