@@ -28,8 +28,6 @@ class DownloadService : Service() {
     companion object {
         const val ACTION_START_DOWNLOAD = "com.grab.START_DOWNLOAD"
         const val ACTION_CANCEL_DOWNLOAD = "com.grab.CANCEL_DOWNLOAD"
-        const val ACTION_PAUSE_DOWNLOAD = "com.grab.PAUSE_DOWNLOAD"
-        const val ACTION_RESUME_DOWNLOAD = "com.grab.RESUME_DOWNLOAD"
         const val EXTRA_URL = "extra_url"
         const val EXTRA_DOWNLOAD_ID = "extra_download_id"
         const val DEFAULT_BACKEND_URL = "https://grab-am.onrender.com"
@@ -38,7 +36,6 @@ class DownloadService : Service() {
         
         class DownloadTask(
             val url: String,
-            var isPaused: Boolean = false,
             var isCancelled: Boolean = false,
             var job: Job? = null,
             var builder: androidx.core.app.NotificationCompat.Builder? = null
@@ -113,24 +110,6 @@ class DownloadService : Service() {
                     activeDownloads.remove(id)
                     notificationHelper.cancelNotification(id)
                     checkStopService(startId)
-                }
-            }
-            ACTION_PAUSE_DOWNLOAD -> {
-                val id = intent.getIntExtra(EXTRA_DOWNLOAD_ID, -1)
-                activeDownloads[id]?.let {
-                    it.isPaused = true
-                    it.builder?.let { builder ->
-                        notificationHelper.updateProgress(builder, 0, "Paused", true, id, true)
-                    }
-                }
-            }
-            ACTION_RESUME_DOWNLOAD -> {
-                val id = intent.getIntExtra(EXTRA_DOWNLOAD_ID, -1)
-                activeDownloads[id]?.let {
-                    it.isPaused = false
-                    it.builder?.let { builder ->
-                        notificationHelper.updateProgress(builder, 0, "Resuming...", true, id, false)
-                    }
                 }
             }
         }
@@ -363,104 +342,84 @@ class DownloadService : Service() {
                         }
                     }
 
-                    if (!formatDetected) {
-                        val contentType = body.contentType()?.toString() ?: ""
-                        if (contentType.contains("text/html") || contentType.contains("application/json")) {
-                            throw Exception("Blocked by provider or invalid media format returned.")
-                        }
+        val requestBuilder = Request.Builder().url(url)
+        val defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        requestBuilder.header("User-Agent", defaultUserAgent)
+        requestBuilder.header("Accept", "video/webm,video/mp4,video/*;q=0.9,*/*;q=0.8")
 
-                        val headerBytes = response.peekBody(512).bytes()
-                        if (headerBytes.isEmpty() && downloadedBytes == 0L) {
-                            throw Exception("Download returned an empty file (HTTP ${response.code}).")
-                        }
+        for ((key, value) in headers) {
+            val lowerKey = key.lowercase()
+            if (ALLOWED_DOWNLOAD_HEADERS.contains(lowerKey)) {
+                requestBuilder.header(key, value)
+            }
+        }
+        
+        val request = requestBuilder.build()
+        val shouldAppend = false
+        
+        httpClient.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                throw Exception("Failed to download file (HTTP ${response.code})")
+            }
+            
+            val body = response.body ?: throw Exception("Empty response body")
+            val contentLength = body.contentLength()
+            totalBytes = if (contentLength != -1L) downloadedBytes + contentLength else -1L
 
-                        if (MediaFormatUtils.isLikelyErrorPayload(headerBytes)) {
-                            throw Exception("Provider returned an error page instead of a video.")
-                        }
-
-                        val detectedFormat = MediaFormatUtils.detectFromHeader(headerBytes)
-                        resolvedExtension = detectedFormat?.extension ?: resolvedExtension
-                        resolvedMimeType = detectedFormat?.mimeType ?: resolvedMimeType
-                        formatDetected = true
-                    }
-                    
-                    java.io.FileOutputStream(tempFile, shouldAppend).use { outputStream ->
-                        val inputStream = body.byteStream()
-                        val buffer = ByteArray(8192)
-                        var bytesRead: Int
-                        var lastProgress = -1
-                        var lastUpdateTime = System.currentTimeMillis()
-                        
-                        while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                            if (!currentCoroutineContext().isActive || activeDownloads[downloadId]?.isCancelled == true) {
-                                throw CancellationException("Service stopped")
-                            }
-                            
-                            while (activeDownloads[downloadId]?.isPaused == true) {
-                                delay(1000)
-                                if (!currentCoroutineContext().isActive || activeDownloads[downloadId]?.isCancelled == true) {
-                                    throw CancellationException("Service stopped")
-                                }
-                            }
-                            
-                            outputStream.write(buffer, 0, bytesRead)
-                            downloadedBytes += bytesRead
-                            
-                            val currentTime = System.currentTimeMillis()
-                            if (totalBytes > 0) {
-                                val progress = ((downloadedBytes * 100) / totalBytes).toInt()
-                                if (progress != lastProgress && (currentTime - lastUpdateTime > 500 || progress == 100)) {
-                                    val downloadProgress = 30 + ((progress.coerceIn(0, 100) * 70) / 100)
-                                    notificationHelper.updateProgress(builder, downloadProgress, "grabbing video... ($progress%)", false, downloadId)
-                                    lastProgress = progress
-                                    lastUpdateTime = currentTime
-                                }
-                            } else {
-                                if (currentTime - lastUpdateTime > 500) {
-                                    val mb = downloadedBytes / (1024 * 1024)
-                                    notificationHelper.updateProgress(builder, 0, "grabbing video... (${mb}MB)", true, downloadId)
-                                    lastUpdateTime = currentTime
-                                }
-                            }
-                        }
-                        outputStream.flush()
-                    }
-                }
-                
-                if (totalBytes != -1L && downloadedBytes < totalBytes) {
-                    throw java.io.IOException("Connection closed prematurely")
-                }
-                
-                // Finished successfully
-                break
-
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                
-                val isNetworkError = e is java.io.IOException || e is java.net.SocketException || e.message?.contains("timeout", ignoreCase = true) == true
-                if (!isNetworkError) {
-                    throw e // Fatal error, fail the download
+            if (!formatDetected) {
+                val headerBytes = response.peekBody(512).bytes()
+                if (headerBytes.isEmpty() && downloadedBytes == 0L) {
+                    throw Exception("Download returned an empty file (HTTP ${response.code}).")
                 }
 
-                // Pause the download on network error instead of auto-retrying
-                activeDownloads[downloadId]?.isPaused = true
-                
-                if (totalBytes > 0) {
-                    val progress = ((downloadedBytes * 100) / totalBytes).toInt()
-                    val downloadProgress = 30 + ((progress.coerceIn(0, 100) * 70) / 100)
-                    notificationHelper.updateProgress(builder, downloadProgress, "Connection lost. Paused.", false, downloadId, true)
-                } else {
-                    notificationHelper.updateProgress(builder, 0, "Connection lost. Paused.", true, downloadId, true)
+                if (MediaFormatUtils.isLikelyErrorPayload(headerBytes)) {
+                    throw Exception("Provider returned an error page instead of a video.")
                 }
 
-                // Wait until the user manually resumes (or cancels)
-                while (activeDownloads[downloadId]?.isPaused == true) {
-                    delay(1000)
+                val detectedFormat = MediaFormatUtils.detectFromHeader(headerBytes)
+                resolvedExtension = detectedFormat?.extension ?: resolvedExtension
+                resolvedMimeType = detectedFormat?.mimeType ?: resolvedMimeType
+                formatDetected = true
+            }
+            
+            java.io.FileOutputStream(tempFile, shouldAppend).use { outputStream ->
+                val inputStream = body.byteStream()
+                val buffer = ByteArray(8192)
+                var bytesRead: Int
+                var lastProgress = -1
+                var lastUpdateTime = System.currentTimeMillis()
+                
+                while (inputStream.read(buffer).also { bytesRead = it } != -1) {
                     if (!currentCoroutineContext().isActive || activeDownloads[downloadId]?.isCancelled == true) {
                         throw CancellationException("Service stopped")
                     }
+                    
+                    outputStream.write(buffer, 0, bytesRead)
+                    downloadedBytes += bytesRead
+                    
+                    val currentTime = System.currentTimeMillis()
+                    if (totalBytes > 0) {
+                        val progress = ((downloadedBytes * 100) / totalBytes).toInt()
+                        if (progress != lastProgress && (currentTime - lastUpdateTime > 500 || progress == 100)) {
+                            val downloadProgress = 30 + ((progress.coerceIn(0, 100) * 70) / 100)
+                            notificationHelper.updateProgress(builder, downloadProgress, "grabbing video... ($progress%)", false, downloadId)
+                            lastProgress = progress
+                            lastUpdateTime = currentTime
+                        }
+                    } else {
+                        if (currentTime - lastUpdateTime > 500) {
+                            val mb = downloadedBytes / (1024 * 1024)
+                            notificationHelper.updateProgress(builder, 0, "grabbing video... (${mb}MB)", true, downloadId)
+                            lastUpdateTime = currentTime
+                        }
+                    }
                 }
+                outputStream.flush()
             }
+        }
+        
+        if (totalBytes != -1L && downloadedBytes < totalBytes) {
+            throw java.io.IOException("Connection closed prematurely")
         }
         
         return moveFileToGallery(tempFile, title, resolvedExtension, resolvedMimeType)

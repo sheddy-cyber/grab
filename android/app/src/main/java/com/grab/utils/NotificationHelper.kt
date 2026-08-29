@@ -79,29 +79,14 @@ class NotificationHelper(private val context: Context) {
         progress: Int,
         content: String? = null,
         indeterminate: Boolean = false,
-        notificationId: Int = NOTIFICATION_ID,
-        isPaused: Boolean = false
+        notificationId: Int = NOTIFICATION_ID
     ) {
         content?.let { builder.setContentText(it) }
         builder.setProgress(100, progress.coerceIn(0, 100), indeterminate)
         
         builder.clearActions()
         
-        if (isPaused) {
-            builder.setSmallIcon(android.R.drawable.ic_media_pause)
-            builder.addAction(
-                android.R.drawable.ic_media_play,
-                "Resume",
-                getActionIntent(com.grab.service.DownloadService.ACTION_RESUME_DOWNLOAD, notificationId)
-            )
-        } else {
-            builder.setSmallIcon(android.R.drawable.stat_sys_download)
-            builder.addAction(
-                android.R.drawable.ic_media_pause,
-                "Pause",
-                getActionIntent(com.grab.service.DownloadService.ACTION_PAUSE_DOWNLOAD, notificationId)
-            )
-        }
+        builder.setSmallIcon(android.R.drawable.stat_sys_download)
         
         builder.addAction(
             android.R.drawable.ic_menu_close_clear_cancel,
