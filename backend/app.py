@@ -523,7 +523,7 @@ def extract_video():
         # To match Instagram's high quality, we must intentionally bypass progressive 
         # formats and send YouTube directly to the backend merger to mux 1080p DASH streams.
         # Facebook's progressive streams are also notoriously low quality and suffer from audio/video desync, so we force them here too.
-        if platform in ('youtube', 'facebook') or not format_info or not has_audio_and_video(format_info):
+        if platform in ('youtube', 'facebook') or not format_info or not has_audio_and_video(format_info, platform):
             reason = f"{platform.title()} high-quality enforcement" if platform in ('youtube', 'facebook') else "No single progressive file with audio found"
             logger.info(f"{reason}. Pointing to /download_merged fallback.")
             download_url = f"{request.host_url.rstrip('/')}/download_merged?url={urllib.parse.quote(video_url)}"
@@ -585,9 +585,9 @@ def is_h264_codec(vcodec, platform='unknown'):
     # Force H.264 for ALL platforms to prevent black-screen AV1/HEVC playback issues on Android.
     vcodec = (vcodec or '').lower()
     
-    # Twitter progressive streams often lack codec metadata in yt-dlp ('unknown' or 'none'),
+    # Twitter and Instagram progressive streams often lack codec metadata in yt-dlp ('unknown' or 'none'),
     # but they are universally H.264 MP4s.
-    if platform == 'twitter_x' and (not vcodec or vcodec == 'none' or vcodec == 'unknown'):
+    if platform in ('twitter_x', 'instagram') and (not vcodec or vcodec == 'none' or vcodec == 'unknown'):
         return True
         
     if not vcodec or vcodec == 'none' or vcodec == 'unknown':
@@ -616,7 +616,7 @@ def choose_single_file_format(info, platform='unknown'):
     # Priority 1: Progressive formats with both audio and video (single file, directly playable)
     progressive_candidates = [
         fmt for fmt in formats
-        if fmt.get('url') and has_audio_and_video(fmt) and is_direct_progressive_format(fmt) and is_h264_codec(fmt.get('vcodec'), platform)
+        if fmt.get('url') and has_audio_and_video(fmt, platform) and is_direct_progressive_format(fmt) and is_h264_codec(fmt.get('vcodec'), platform)
     ]
     
     if progressive_candidates:
@@ -647,16 +647,21 @@ def choose_single_file_format(info, platform='unknown'):
 
     return {}
 
-def has_audio_and_video(format_info):
-    has_video = format_info.get('vcodec') not in (None, 'none')
-    has_audio = format_info.get('acodec') not in (None, 'none')
+def has_audio_and_video(format_info, platform='unknown'):
+    vcodec = str(format_info.get('vcodec') or '').lower()
+    has_video = vcodec not in ('', 'none', 'unknown')
+    has_audio = str(format_info.get('acodec') or '').lower() not in ('', 'none', 'unknown')
     
     if has_video and has_audio:
         return True
         
-    # Heuristic: yt-dlp sometimes fails to report acodec for Instagram/Twitter progressive MP4s.
-    # If the format is a direct video (not a DASH 'video-only' stream), assume it has embedded audio.
+    # Heuristic: yt-dlp sometimes fails to report codec metadata for Instagram/Twitter progressive MP4s.
+    # If the platform is Instagram or Twitter, and the format is a direct video (not a DASH 'video-only' stream),
+    # assume it has embedded audio and video.
     format_id = str(format_info.get('format_id') or '').lower()
+    if platform in ('twitter_x', 'instagram') and 'dash' not in format_id and 'video' not in format_id:
+        return True
+        
     if has_video and 'dash' not in format_id and 'video' not in format_id:
         return True
         
