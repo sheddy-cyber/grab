@@ -84,9 +84,21 @@ def _get_cobalt_instances(platform):
     except Exception as e:
         logger.error(f"Failed to fetch from cobalt.directory: {str(e)}")
 
-    # Always include the official instance as a fallback
-    if 'https://api.cobalt.tools' not in urls:
-        urls.append('https://api.cobalt.tools')
+    # Always include reliable community instances as a fallback
+    # This prevents the backend from starving if cobalt.directory blocks us (e.g. Cloudflare)
+    fallback_instances = [
+        'https://api.cobalt.tools',
+        'https://cobalt.qewertyy.dev',
+        'https://co.wuk.sh',
+        'https://cobalt.wukko.me',
+        'https://cobalt.owo.vc',
+        'https://cobalt.kwiatektv.com',
+        'https://api.cobalt.tools'
+    ]
+    
+    for instance in fallback_instances:
+        if instance not in urls:
+            urls.append(instance)
 
     if not isinstance(_cobalt_cache['urls'], dict):
         _cobalt_cache['urls'] = {}
