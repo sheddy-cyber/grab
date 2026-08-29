@@ -24,6 +24,9 @@ else
     echo "WARNING: bgutil server not found — YouTube downloads may fail"
 fi
 
+echo "Pre-caching static-ffmpeg binary..."
+python -c "import static_ffmpeg; static_ffmpeg.add_paths()" || echo "WARNING: static-ffmpeg pre-cache failed. It will retry on first request."
+
 # Start gunicorn (use PORT env var from Render, fallback to 7860)
 PORT="${PORT:-7860}"
 echo "Starting gunicorn on port $PORT..."

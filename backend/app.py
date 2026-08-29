@@ -816,15 +816,15 @@ def download_merged():
     temp_dir = tempfile.mkdtemp()
     file_id = str(uuid.uuid4())
     output_template = os.path.join(temp_dir, f"{file_id}.%(ext)s")
-    # We use the standard web client setup with cookies
     # Inject platform-specific options
     platform = detect_platform(video_url)
     
-    # Path to the static ffmpeg downloaded by build.sh
-    ffmpeg_path = os.path.join(os.getcwd(), 'ffmpeg')
-    if not os.path.exists(ffmpeg_path):
-        # Fallback to system ffmpeg if local binary isn't found
-        ffmpeg_path = 'ffmpeg'
+    # Add static ffmpeg to the system PATH so yt-dlp can find it natively
+    try:
+        import static_ffmpeg
+        static_ffmpeg.add_paths()
+    except Exception as e:
+        logger.error(f"Failed to load static_ffmpeg: {e}")
     
     ydl_opts = {
         # Use a simple format chain to guarantee we always find a video stream
@@ -837,7 +837,6 @@ def download_merged():
         'cookiefile': 'cookies.txt' if os.path.exists('cookies.txt') else None,
         'merge_output_format': 'mp4',
         'no_mtime': True, # Don't set file modification time to upload date
-        'ffmpeg_location': ffmpeg_path,
         'postprocessor_args': {
             # Strip metadata so gallery apps don't sort videos years back
             'ffmpeg': ['-map_metadata', '-1', '-metadata', 'creation_time=now']
