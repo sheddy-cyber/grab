@@ -820,6 +820,12 @@ def download_merged():
     # Inject platform-specific options
     platform = detect_platform(video_url)
     
+    try:
+        import imageio_ffmpeg
+        ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        ffmpeg_path = None
+    
     ydl_opts = {
         # Use a simple format chain to guarantee we always find a video stream
         'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio/best[ext=mp4]/best',
@@ -831,6 +837,7 @@ def download_merged():
         'cookiefile': 'cookies.txt' if os.path.exists('cookies.txt') else None,
         'merge_output_format': 'mp4',
         'no_mtime': True, # Don't set file modification time to upload date
+        'ffmpeg_location': ffmpeg_path,
         'postprocessor_args': {
             # Strip metadata so gallery apps don't sort videos years back
             'ffmpeg': ['-map_metadata', '-1', '-metadata', 'creation_time=now']

@@ -5,3 +5,4 @@ yt-dlp-ejs
 bgutil-ytdlp-pot-provider
 gunicorn==21.2.0
 requests==2.31.0
+imageio-ffmpeg==0.4.9
