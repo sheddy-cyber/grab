@@ -308,19 +308,9 @@ class DownloadService : Service() {
         var resolvedExtension = extension.ifBlank { "mp4" }
         var resolvedMimeType = mimeType.ifBlank { mimeTypeForExtension(resolvedExtension) }
         var formatDetected = false
-        
-        val maxRetries = 50
-        var retryCount = 0
 
-        while (retryCount < maxRetries) {
+        while (true) {
             try {
-                // Wait for network if not available
-                while (!NetworkUtils.isInternetAvailable(this@DownloadService)) {
-                    notificationHelper.updateProgress(builder, 0, "Waiting for network...", true, downloadId)
-                    delay(3000)
-                    if (!currentCoroutineContext().isActive) throw CancellationException("Service stopped")
-                }
-
                 val requestBuilder = Request.Builder().url(url)
                 val defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
                 requestBuilder.header("User-Agent", defaultUserAgent)
@@ -446,15 +436,30 @@ class DownloadService : Service() {
 
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
-                Log.w("GrabDownload", "Download attempt failed (retry $retryCount)", e)
                 
-                retryCount++
-                if (retryCount >= maxRetries) {
-                    tempFile.delete()
-                    throw Exception("Failed after $maxRetries retries: ${e.message}", e)
+                val isNetworkError = e is java.io.IOException || e is java.net.SocketException || e.message?.contains("timeout", ignoreCase = true) == true
+                if (!isNetworkError) {
+                    throw e // Fatal error, fail the download
                 }
-                notificationHelper.updateProgress(builder, 0, "Connection lost, retrying...", true, downloadId)
-                delay(3000)
+
+                // Pause the download on network error instead of auto-retrying
+                activeDownloads[downloadId]?.isPaused = true
+                
+                if (totalBytes > 0) {
+                    val progress = ((downloadedBytes * 100) / totalBytes).toInt()
+                    val downloadProgress = 30 + ((progress.coerceIn(0, 100) * 70) / 100)
+                    notificationHelper.updateProgress(builder, downloadProgress, "Connection lost. Paused.", false, downloadId, true)
+                } else {
+                    notificationHelper.updateProgress(builder, 0, "Connection lost. Paused.", true, downloadId, true)
+                }
+
+                // Wait until the user manually resumes (or cancels)
+                while (activeDownloads[downloadId]?.isPaused == true) {
+                    delay(1000)
+                    if (!currentCoroutineContext().isActive || activeDownloads[downloadId]?.isCancelled == true) {
+                        throw CancellationException("Service stopped")
+                    }
+                }
             }
         }
         
