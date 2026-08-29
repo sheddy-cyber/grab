@@ -46,9 +46,6 @@ class DownloadService : Service() {
         val isDownloading: Boolean
             get() = activeDownloads.isNotEmpty()
 
-        @Volatile
-        var onServiceStarted: (() -> Unit)? = null
-
         private val ALLOWED_DOWNLOAD_HEADERS = setOf(
             "user-agent",
             "referer",
@@ -148,9 +145,6 @@ class DownloadService : Service() {
             } else {
                 startForeground(downloadId, builder.build())
             }
-            // Notify active listeners that the service has successfully entered the foreground
-            Log.d("GrabDownload", "Service in foreground. Notifying listeners.")
-            onServiceStarted?.invoke()
         } catch (e: Exception) {
             Log.e("GrabDownload", "Error starting foreground service", e)
         }

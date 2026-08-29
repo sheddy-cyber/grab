@@ -8,7 +8,5 @@
     <string name="download_started">Download started</string>
     <string name="invalid_url">Use a Twitter/X, YouTube, Facebook, or Instagram video URL</string>
     <string name="clipboard_empty">Clipboard is empty</string>
-    <string name="shortcut_download_short">Download URL</string>
-    <string name="shortcut_download_long">Download from Clipboard</string>
     <string name="no_internet">No internet connection</string>
 </resources>
