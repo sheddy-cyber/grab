@@ -515,7 +515,7 @@ def extract_video():
                 return jsonify(finalize_download_response(cobalt_res))
             return jsonify({'error': 'Failed to extract video information'}), 500
 
-        format_info = choose_single_file_format(info)
+        format_info = choose_single_file_format(info, platform)
         
         # YouTube physically stopped providing 1080p progressive (single-file) streams years ago.
         # Its progressive streams are hard-capped at 720p (often defaulting to 360p).
@@ -580,16 +580,23 @@ def extract_video():
         logger.error(f"Error extracting video: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-def is_h264_codec(vcodec):
-    # The user requested to simplify and download whatever stable high quality format is available,
-    # regardless of WhatsApp compatibility (which previously required forcing H.264).
-    # We now accept any codec (including HEVC/AV1) to prioritize quality.
-    return True
+def is_h264_codec(vcodec, platform='unknown'):
+    # The user requested to simplify and download whatever stable high quality format is available for Instagram,
+    # regardless of WhatsApp compatibility (which requires forcing H.264).
+    if platform == 'instagram':
+        return True
+    
+    # For Facebook and YouTube, we MUST force H.264 because if we allow HEVC/AV1, 
+    # many Android phones will fail to decode the video, resulting in a black screen with only audio.
+    vcodec = (vcodec or '').lower()
+    if not vcodec or vcodec == 'none':
+        return False
+    return 'avc' in vcodec or 'h264' in vcodec
 
-def choose_single_file_format(info):
+def choose_single_file_format(info, platform='unknown'):
     """Return the best direct format that yt-dlp can download to a single playable file."""
     # First check if the main info dict itself is a valid direct format
-    if info.get('url') and has_audio_and_video(info) and is_direct_progressive_format(info) and is_h264_codec(info.get('vcodec')):
+    if info.get('url') and has_audio_and_video(info) and is_direct_progressive_format(info) and is_h264_codec(info.get('vcodec'), platform):
         return info
 
     formats = info.get('formats') or []
@@ -597,7 +604,7 @@ def choose_single_file_format(info):
     # Priority 1: Progressive formats with both audio and video (single file, directly playable)
     progressive_candidates = [
         fmt for fmt in formats
-        if fmt.get('url') and has_audio_and_video(fmt) and is_direct_progressive_format(fmt) and is_h264_codec(fmt.get('vcodec'))
+        if fmt.get('url') and has_audio_and_video(fmt) and is_direct_progressive_format(fmt) and is_h264_codec(fmt.get('vcodec'), platform)
     ]
 
     if progressive_candidates:
@@ -617,7 +624,7 @@ def choose_single_file_format(info):
         fmt for fmt in formats
         if fmt.get('url')
         and is_direct_progressive_format(fmt)
-        and is_h264_codec(fmt.get('vcodec'))
+        and is_h264_codec(fmt.get('vcodec'), platform)
     ]
 
     if video_only_candidates:
@@ -633,15 +640,15 @@ def choose_single_file_format(info):
         return max(video_only_candidates, key=score)
 
     # Fallback: check main info dict
-    if info.get('url') and is_direct_progressive_format(info) and is_h264_codec(info.get('vcodec')):
+    if info.get('url') and is_direct_progressive_format(info) and is_h264_codec(info.get('vcodec'), platform):
         return info
 
     # Last resort: return any format that has a URL, is progressive, and is H.264
     for fmt in formats:
-        if fmt.get('url') and is_direct_progressive_format(fmt) and is_h264_codec(fmt.get('vcodec')):
+        if fmt.get('url') and is_direct_progressive_format(fmt) and is_h264_codec(fmt.get('vcodec'), platform):
             return fmt
             
-    if info.get('url') and is_direct_progressive_format(info) and is_h264_codec(info.get('vcodec')):
+    if info.get('url') and is_direct_progressive_format(info) and is_h264_codec(info.get('vcodec'), platform):
         return info
 
     return {}
@@ -816,12 +823,15 @@ def download_merged():
     file_id = str(uuid.uuid4())
     output_template = os.path.join(temp_dir, f"{file_id}.%(ext)s")
     # We use the standard web client setup with cookies
+    # Inject platform-specific options
+    platform = detect_platform(video_url)
+    
     ydl_opts = {
         # Use a simple format chain to guarantee we always find a video stream
         'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio/best[ext=mp4]/best',
-        # We prioritize resolution and quality over specific codecs (like H.264), 
-        # so we get the highest quality possible even if it's HEVC.
-        'format_sort': ['res', 'ext:mp4:m4a'],
+        # Force H.264 for YouTube and Facebook to prevent black-screen AV1/HEVC issues on Android,
+        # but allow high-quality HEVC for Instagram as requested by the user.
+        'format_sort': ['res', 'ext:mp4:m4a'] if platform == 'instagram' else ['vcodec:h264', 'res', 'ext:mp4:m4a'],
         'outtmpl': output_template,
         'quiet': True,
         'no_warnings': True,
@@ -835,7 +845,6 @@ def download_merged():
     }
     
     # Inject js_runtimes for YouTube just in case
-    platform = detect_platform(video_url)
     if platform == 'youtube':
         ydl_opts['js_runtimes'] = {'node': {}}
         ydl_opts['extractor_args'] = {
