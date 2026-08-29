@@ -37,18 +37,26 @@ class NotificationHelper(private val context: Context) {
         }
     }
 
-    fun getBaseNotification(title: String, content: String): NotificationCompat.Builder {
+    fun getBaseNotification(title: String, content: String, downloadId: Int): NotificationCompat.Builder {
+        val customView = android.widget.RemoteViews(context.packageName, R.layout.notification_download)
+        customView.setTextViewText(R.id.tvTitle, title)
+        customView.setTextViewText(R.id.tvContent, content)
+        customView.setProgressBar(R.id.progressBar, 100, 0, true)
+        
+        val cancelIntent = getActionIntent(com.grab.service.DownloadService.ACTION_CANCEL_DOWNLOAD, downloadId)
+        customView.setOnClickPendingIntent(R.id.btnCancel, cancelIntent)
+
         return NotificationCompat.Builder(context, CHANNEL_ID)
-            .setContentTitle(title)
-            .setContentText(content)
-            .setSmallIcon(android.R.drawable.stat_sys_download) // System standard animated download icon
-            .setColor(ContextCompat.getColor(context, R.color.textPrimary)) // Tint the progress bar to white (mature aesthetic)
-            .setLargeIcon(appLogo())
+            .setContentTitle(title) // kept in extras for retrieval
+            .setSmallIcon(android.R.drawable.stat_sys_download)
+            .setStyle(androidx.core.app.NotificationCompat.DecoratedCustomViewStyle())
+            .setCustomContentView(customView)
+            .setCustomBigContentView(customView)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .setGroup("GRAB_DOWNLOADS") // Group multiple downloads
+            .setGroup("GRAB_DOWNLOADS")
     }
 
     private fun hasNotificationPermission(): Boolean {
@@ -81,18 +89,21 @@ class NotificationHelper(private val context: Context) {
         indeterminate: Boolean = false,
         notificationId: Int = NOTIFICATION_ID
     ) {
-        content?.let { builder.setContentText(it) }
-        builder.setProgress(100, progress.coerceIn(0, 100), indeterminate)
+        val title = builder.build().extras.getString(NotificationCompat.EXTRA_TITLE) ?: "grab"
         
-        builder.clearActions()
+        val customView = android.widget.RemoteViews(context.packageName, R.layout.notification_download)
+        customView.setTextViewText(R.id.tvTitle, title)
+        if (content != null) {
+            customView.setTextViewText(R.id.tvContent, content)
+            builder.setContentText(content) // keep extra updated
+        }
+        customView.setProgressBar(R.id.progressBar, 100, progress.coerceIn(0, 100), indeterminate)
         
-        builder.setSmallIcon(android.R.drawable.stat_sys_download)
+        val cancelIntent = getActionIntent(com.grab.service.DownloadService.ACTION_CANCEL_DOWNLOAD, notificationId)
+        customView.setOnClickPendingIntent(R.id.btnCancel, cancelIntent)
         
-        builder.addAction(
-            android.R.drawable.ic_menu_close_clear_cancel,
-            "Cancel",
-            getActionIntent(com.grab.service.DownloadService.ACTION_CANCEL_DOWNLOAD, notificationId)
-        )
+        builder.setCustomContentView(customView)
+        builder.setCustomBigContentView(customView)
         
         if (hasNotificationPermission()) {
             NotificationManagerCompat.from(context).notify(notificationId, builder.build())

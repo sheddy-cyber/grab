@@ -132,7 +132,7 @@ class DownloadService : Service() {
             "Extracting ${it.platform.displayName} video..."
         } ?: "Checking link..."
 
-        val builder = notificationHelper.getBaseNotification("grab", initialContent)
+        val builder = notificationHelper.getBaseNotification("grab", initialContent, downloadId)
         
         val task = DownloadTask(videoUrl, builder = builder)
         activeDownloads[downloadId] = task
