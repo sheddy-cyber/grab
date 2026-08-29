@@ -124,6 +124,7 @@ def extract_with_cobalt(video_url):
     payload = {
         'url': video_url,
         'videoQuality': '1080',
+        'vCodec': 'h264',
         'alwaysProxy': True
     }
     
