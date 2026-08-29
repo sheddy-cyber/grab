@@ -33,11 +33,20 @@ def _get_cobalt_instances(platform):
     logger.info("Fetching working Cobalt APIs from cobalt.directory...")
     urls = []
     try:
+        # First try the active community tracker
         res = requests.get(
-            'https://cobalt.directory/api/working?type=api',
+            'https://instances.cobalt.best/api/instances',
             headers={'User-Agent': browser_ua},
             timeout=8
         )
+        if res.status_code != 200:
+            # Fallback to older directory
+            res = requests.get(
+                'https://cobalt.directory/api/working?type=api',
+                headers={'User-Agent': browser_ua},
+                timeout=8
+            )
+            
         if res.status_code == 200:
             data = res.json()
             # cobalt.directory may return different response shapes:
@@ -66,7 +75,10 @@ def _get_cobalt_instances(platform):
                     if isinstance(item, str):
                         urls.append(item)
                     elif isinstance(item, dict):
-                        instance_url = item.get('url') or item.get('api') or item.get('endpoint')
+                        instance_url = item.get('url') or item.get('api') or item.get('endpoint') or item.get('domain')
+                        # Sometimes domain is just "api.cobalt.tools" without https://
+                        if instance_url and not instance_url.startswith('http'):
+                            instance_url = f"https://{instance_url}"
                         services = item.get('services', [])
                         # Include if it supports our platform or has no service filter
                         if instance_url:
