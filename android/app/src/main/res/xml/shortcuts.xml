@@ -7,9 +7,9 @@
         android:shortcutShortLabel="@string/shortcut_download_short"
         android:shortcutLongLabel="@string/shortcut_download_long">
         <intent
-            android:action="com.grabam.action.DOWNLOAD_CLIPBOARD"
-            android:targetPackage="com.grabam"
-            android:targetClass="com.grabam.ShortcutActivity" />
+            android:action="com.grab.action.DOWNLOAD_CLIPBOARD"
+            android:targetPackage="com.grab"
+            android:targetClass="com.grab.ShortcutActivity" />
         <categories android:name="android.shortcut.conversation" />
     </shortcut>
 </shortcuts>

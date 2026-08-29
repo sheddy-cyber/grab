@@ -1,24 +1,29 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  --font-family: 'Manrope', sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   
-  --bg-color: #0F172A;
-  --surface-color: #1E293B;
-  --surface-alt: #334155;
+  --bg-color: #09090B;
   
-  --text-primary: #FFFFFF;
-  --text-secondary: #94A3B8;
+  --surface-card: rgba(24, 24, 27, 0.8);
+  --surface-card-hover: rgba(39, 39, 42, 0.9);
+  --surface-alt: rgba(24, 24, 27, 0.5);
+  --surface-border: rgba(255, 255, 255, 0.06);
+  --surface-border-hover: rgba(255, 255, 255, 0.12);
   
-  --brand-twitter: #1DA1F2;
-  --brand-youtube: #FF0000;
-  --brand-instagram-start: #E1306C;
+  --text-primary: #FAFAFA;
+  --text-secondary: #A1A1AA;
+  --text-muted: #52525B;
+  
+  --accent: #E4E4E7;
+  
+  --brand-twitter: #1D9BF0;
+  --brand-youtube: #FF0033;
+  --brand-instagram: #E1306C;
   --brand-instagram-end: #F56040;
   --brand-facebook: #1877F2;
 
-  --glass-bg: rgba(30, 41, 59, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
 }
 
 * {
@@ -29,7 +34,7 @@
 
 body {
   margin: 0;
-  font-family: var(--font-family);
+  font-family: var(--font-body);
   background-color: var(--bg-color);
   color: var(--text-primary);
   min-height: 100vh;
@@ -45,132 +50,200 @@ body {
   min-height: 100vh;
 }
 
-/* Glassmorphism Card */
-.glass-card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--glass-border);
-  border-radius: 24px;
-  box-shadow: var(--glass-shadow);
-  padding: 2.5rem;
+h1, h2, h3, h4, .font-heading {
+  font-family: var(--font-body);
+  font-weight: 600;
 }
 
-/* Vibrant Gradient Button */
-.btn-gradient {
-  background: linear-gradient(45deg, var(--brand-instagram-start), var(--brand-instagram-end), var(--brand-facebook));
-  background-size: 200% auto;
-  color: #fff;
-  border: none;
-  border-radius: 30px;
-  padding: 16px 32px;
-  font-size: 1.125rem;
-  font-weight: 700;
-  font-family: var(--font-family);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(225, 48, 108, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-}
-
-.btn-gradient:hover {
-  background-position: right center;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(225, 48, 108, 0.6);
-}
-
-.btn-gradient:active {
-  transform: translateY(1px);
-}
-
-/* Subtle input field */
-.input-field {
-  width: 100%;
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid var(--surface-alt);
-  color: var(--text-primary);
-  padding: 16px 24px;
+/* Apex Card */
+.apex-card {
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
   border-radius: 16px;
-  font-family: var(--font-family);
-  font-size: 1rem;
-  outline: none;
-  transition: all 0.3s ease;
+  box-shadow: var(--shadow-card);
+  padding: 2.25rem;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.input-field:focus {
-  border-color: var(--brand-twitter);
-  box-shadow: 0 0 0 3px rgba(29, 161, 242, 0.2);
+.apex-card:hover {
+  border-color: var(--surface-border-hover);
+  background: var(--surface-card-hover);
 }
 
-.input-field::placeholder {
+/* Status Pill Badge */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
   color: var(--text-secondary);
 }
 
+/* Primary Action Button */
+.btn-titanium {
+  background: #FAFAFA;
+  color: #09090B;
+  border: none;
+  border-radius: 14px;
+  padding: 16px 32px;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.btn-titanium:hover {
+  background: #FFFFFF;
+}
+
+.btn-titanium:active {
+  transform: translateY(1px);
+}
+
+/* Stealth Secondary Button */
+.btn-stealth {
+  background: var(--surface-alt);
+  color: var(--text-primary);
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  padding: 14px 28px;
+  font-size: 1rem;
+  font-weight: 500;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.btn-stealth:hover {
+  border-color: var(--surface-border-hover);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Input field */
+.input-field {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--surface-border);
+  color: var(--text-primary);
+  padding: 16px 20px;
+  border-radius: 14px;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.input-field:focus {
+  border-color: var(--text-secondary);
+}
+
+.input-field::placeholder {
+  color: var(--text-muted);
+}
+
 .input-field:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
-/* Gradient text utility */
-.text-gradient {
-  background: linear-gradient(to right, var(--brand-twitter), var(--brand-instagram-end));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  display: inline-block;
+/* Platform Chips */
+.platform-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(24, 24, 27, 0.6);
+  border: 1px solid var(--surface-border);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
-/* Scrollable platforms container */
-.platforms-container {
-  display: flex;
-  gap: 2rem;
-  font-size: 1.25rem;
-  font-weight: 800;
-  max-width: 100%;
-  overflow-x: auto;
-  padding-bottom: 1rem;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none; /* Firefox */
-}
-.platforms-container::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+.platform-chip:hover {
+  border-color: var(--surface-border-hover);
+  background: rgba(255, 255, 255, 0.05);
 }
 
-/* Steps grid */
+/* Step Cards Grid */
 .steps-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
   width: 100%;
   margin-top: 2rem;
   text-align: left;
 }
 
 .step-card {
-  background: rgba(30, 41, 59, 0.4);
-  border: 1px solid var(--surface-alt);
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
   border-radius: 16px;
+  box-shadow: var(--shadow-card);
   padding: 2rem;
-  transition: transform 0.3s ease;
+  transition: all 0.2s ease;
+  position: relative;
 }
 
 .step-card:hover {
-  transform: translateY(-5px);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: var(--surface-border-hover);
+  background: var(--surface-card-hover);
 }
 
-.step-number {
-  background: var(--surface-alt);
-  color: var(--text-primary);
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
+.step-badge {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1.25rem;
+}
+
+/* Header brand container */
+.brand-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.brand-emblem {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  object-fit: contain;
+}
+
+.brand-title {
+  font-family: var(--font-body);
   font-size: 1.25rem;
-  margin-bottom: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-primary);
 }

@@ -1,4 +1,4 @@
-package com.grabam
+package com.grab
 
 import android.app.Activity
 import android.content.ClipboardManager
@@ -7,10 +7,11 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import com.grabam.service.DownloadService
-import com.grabam.utils.ForegroundAppDetector
-import com.grabam.utils.NotificationHelper
-import com.grabam.utils.UrlUtils
+import com.grab.service.DownloadService
+import com.grab.utils.ForegroundAppDetector
+import com.grab.utils.NotificationHelper
+import com.grab.utils.UrlUtils
+import com.grab.utils.NetworkUtils
 
 /**
  * Invisible activity that reads the clipboard, starts DownloadService, and
@@ -25,52 +26,39 @@ class ShortcutActivity : Activity() {
     private val finishRunnable = Runnable { finishGracefully() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Capture the foreground app before this activity fully takes focus.
-        returnToPackage = ForegroundAppDetector.detectPreviousApp(this)
-
         super.onCreate(savedInstanceState)
-        overridePendingTransition(0, 0)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-            setShowWhenLocked(false)
-            setTurnScreenOn(false)
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        scheduleClipboardRead()
-    }
-
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) {
-            scheduleClipboardRead()
-        }
-    }
-
-    private fun scheduleClipboardRead() {
-        if (handled || finishing) return
-
-        window?.decorView?.post {
-            if (handled || finishing || !hasWindowFocus()) return@post
-            handled = true
-            downloadFromClipboard()
+        
+        // Ensure transparent styling
+        window.setBackgroundDrawableResource(android.R.color.transparent)
+        
+        try {
+            returnToPackage = ForegroundAppDetector.detectPreviousApp(this)
+            
+            // Wait slightly for window focus to stabilize
+            window.decorView.postDelayed({
+                if (!handled) {
+                    downloadFromClipboard()
+                }
+            }, 100)
+            
+            // Failsafe: force finish after 3 seconds
+            window.decorView.postDelayed(finishRunnable, 3000)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in onCreate", e)
+            finishGracefully()
         }
     }
 
     private fun downloadFromClipboard() {
-        val notificationHelper = NotificationHelper(applicationContext)
-
+        if (handled) return
+        handled = true
+        
         try {
             val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val text = clipboard.primaryClip
-                ?.getItemAt(0)
-                ?.coerceToText(this)
-                ?.toString()
-                ?.trim()
-
-            if (text.isNullOrEmpty()) {
+            val text = clipboard.primaryClip?.getItemAt(0)?.text?.toString()
+            
+            if (text.isNullOrBlank()) {
+                val notificationHelper = NotificationHelper(this)
                 notificationHelper.showMessage(
                     getString(R.string.app_name),
                     getString(R.string.clipboard_empty)
@@ -78,12 +66,23 @@ class ShortcutActivity : Activity() {
                 finishGracefully()
                 return
             }
-
+            
             val videoUrl = UrlUtils.extractSupportedUrl(text)
             if (videoUrl == null) {
+                val notificationHelper = NotificationHelper(this)
                 notificationHelper.showMessage(
                     getString(R.string.app_name),
                     getString(R.string.invalid_url)
+                )
+                finishGracefully()
+                return
+            }
+
+            if (!NetworkUtils.isInternetAvailable(this)) {
+                val notificationHelper = NotificationHelper(this)
+                notificationHelper.showMessage(
+                    getString(R.string.app_name),
+                    getString(R.string.no_internet)
                 )
                 finishGracefully()
                 return
@@ -107,7 +106,8 @@ class ShortcutActivity : Activity() {
             window?.decorView?.postDelayed(finishRunnable, 3000)
         } catch (e: Exception) {
             Log.e(TAG, "Shortcut download failed", e)
-            notificationHelper.showError(e.message ?: "Unknown error")
+            val notificationHelper = NotificationHelper(this)
+            notificationHelper.showMessage(getString(R.string.app_name), e.message ?: "Unknown error")
             finishGracefully()
         }
     }
@@ -124,6 +124,6 @@ class ShortcutActivity : Activity() {
     }
 
     companion object {
-        private const val TAG = "GrabAmShortcut"
+        private const val TAG = "GrabShortcut"
     }
 }

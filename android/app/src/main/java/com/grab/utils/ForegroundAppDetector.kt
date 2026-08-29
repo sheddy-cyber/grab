@@ -1,4 +1,4 @@
-package com.grabam.utils
+package com.grab.utils
 
 import android.app.Activity
 import android.app.ActivityManager
@@ -10,7 +10,7 @@ import android.os.Build
 import android.util.Log
 
 /**
- * Detects which app was in the foreground before grab am briefly takes focus,
+ * Detects which app was in the foreground before grab briefly takes focus,
  * then restores that app after the shortcut finishes.
  */
 object ForegroundAppDetector {
@@ -31,7 +31,7 @@ object ForegroundAppDetector {
         "com.huawei.android.launcher",
         "com.oppo.launcher",
         "com.oneplus.launcher",
-        "com.grabam",
+        "com.grab",
     )
 
     private val IGNORED_PREFIXES = listOf(

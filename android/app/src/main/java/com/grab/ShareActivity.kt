@@ -1,12 +1,13 @@
-package com.grabam
+package com.grab
 
 import android.app.Activity
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
-import com.grabam.service.DownloadService
-import com.grabam.utils.UrlUtils
+import com.grab.service.DownloadService
+import com.grab.utils.UrlUtils
+import com.grab.utils.NetworkUtils
 
 class ShareActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,6 +28,11 @@ class ShareActivity : Activity() {
             if (sharedText != null) {
                 val videoUrl = UrlUtils.extractSupportedUrl(sharedText)
                 if (videoUrl != null) {
+                    if (!NetworkUtils.isInternetAvailable(this)) {
+                        Toast.makeText(this, R.string.no_internet, Toast.LENGTH_SHORT).show()
+                        return
+                    }
+
                     val serviceIntent = Intent(this, DownloadService::class.java).apply {
                         action = DownloadService.ACTION_START_DOWNLOAD
                         putExtra(DownloadService.EXTRA_URL, videoUrl.url)

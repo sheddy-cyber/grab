@@ -1,15 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ripple xmlns:android="http://schemas.android.com/apk/res/android"
-    android:color="?android:attr/colorControlHighlight">
+    android:color="#33000000">
     <item>
         <shape android:shape="rectangle">
-            <corners android:radius="16dp"/>
-            <!-- A vibrant 45-degree gradient blending the logo colors (Pink/Orange -> Blue) -->
+            <corners android:radius="14dp"/>
             <gradient
-                android:angle="45"
-                android:startColor="@color/brandInstagram"
-                android:centerColor="@color/brandInstagramEnd"
-                android:endColor="@color/brandFacebook"
+                android:angle="90"
+                android:startColor="#E6ECF5"
+                android:endColor="#FFFFFF"
                 android:type="linear" />
         </shape>
     </item>

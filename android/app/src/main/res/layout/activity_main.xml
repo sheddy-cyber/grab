@@ -36,11 +36,11 @@
                 app:iconTint="@color/textSecondary" />
         </FrameLayout>
 
-        <!-- Logo and App Name -->
+        <!-- Logo and App Branding -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
+            android:layout_marginTop="24dp"
             android:gravity="center_horizontal"
             android:orientation="vertical">
 
@@ -56,26 +56,27 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/app_name"
+                android:layout_marginTop="12dp"
+                android:letterSpacing="0.06"
+                android:text="grab"
                 android:textColor="@color/textPrimary"
-                android:textSize="26sp"
+                android:textSize="24sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/tvDescription"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="6dp"
                 android:text="@string/app_description"
                 android:textColor="@color/textSecondary"
-                android:textSize="15sp" />
+                android:textSize="14sp" />
         </LinearLayout>
 
         <!-- Spacer -->
         <View
             android:layout_width="match_parent"
-            android:layout_height="48dp" />
+            android:layout_height="40dp" />
 
         <!-- URL Input -->
         <com.google.android.material.textfield.TextInputLayout
@@ -86,12 +87,14 @@
             android:hint="@string/enter_url"
             android:textColorHint="@color/textSecondary"
             app:boxBackgroundColor="@color/colorSurface"
-            app:boxCornerRadiusBottomEnd="16dp"
-            app:boxCornerRadiusBottomStart="16dp"
-            app:boxCornerRadiusTopEnd="16dp"
-            app:boxCornerRadiusTopStart="16dp"
+            app:boxCornerRadiusBottomEnd="14dp"
+            app:boxCornerRadiusBottomStart="14dp"
+            app:boxCornerRadiusTopEnd="14dp"
+            app:boxCornerRadiusTopStart="14dp"
             app:boxStrokeColor="@color/colorPrimary"
-            app:hintTextColor="@color/colorPrimary">
+            app:boxStrokeWidth="1.5dp"
+            app:boxStrokeWidthFocused="2dp"
+            app:hintTextColor="@color/textSecondary">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etUrl"
@@ -101,26 +104,29 @@
                 android:paddingTop="16dp"
                 android:paddingBottom="16dp"
                 android:singleLine="true"
-                android:textColor="@color/textPrimary" />
+                android:textColor="@color/textPrimary"
+                android:textSize="15sp" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Spacer -->
         <View
             android:layout_width="match_parent"
-            android:layout_height="24dp" />
+            android:layout_height="20dp" />
 
         <!-- Download button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnDownload"
             style="@style/Widget.Material3.Button"
             android:layout_width="match_parent"
-            android:layout_height="60dp"
+            android:layout_height="58dp"
             android:text="@string/download"
             android:textAllCaps="false"
             android:textColor="@color/textOnPrimary"
             android:textSize="16sp"
+            android:textStyle="bold"
             android:background="@drawable/bg_gradient_button"
             app:backgroundTint="@null"
+            app:cornerRadius="14dp"
             app:icon="@drawable/ic_download"
             app:iconGravity="textStart"
             app:iconTint="@color/textOnPrimary" />
@@ -128,89 +134,96 @@
         <!-- Paste button -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnPaste"
-            style="@style/Widget.Material3.Button.TonalButton"
+            style="@style/Widget.Material3.Button"
             android:layout_width="match_parent"
-            android:layout_height="60dp"
+            android:layout_height="54dp"
             android:layout_marginTop="12dp"
             android:text="@string/paste_link"
             android:textAllCaps="false"
-            android:textColor="@color/colorSecondary"
-            android:textSize="16sp"
-            app:backgroundTint="@color/colorSurfaceAlt"
-            app:cornerRadius="30dp"
+            android:textColor="@color/textPrimary"
+            android:textSize="15sp"
+            android:background="@drawable/bg_secondary_button"
+            app:backgroundTint="@null"
+            app:cornerRadius="14dp"
             app:icon="@drawable/ic_paste"
             app:iconGravity="textStart"
-            app:iconTint="@color/colorSecondary" />
+            app:iconTint="@color/textPrimary" />
 
-        <!-- Spacer to push text to bottom -->
+        <!-- Spacer to push content to bottom -->
         <Space
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1" />
 
-        <!-- Supported platforms hint -->
+        <!-- Supported platforms container -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"
-            android:layout_marginBottom="8dp"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_secondary_button"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:gravity="center_vertical"
             android:orientation="horizontal">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:letterSpacing="0.1"
-                android:text="YT "
+                android:letterSpacing="0.04"
+                android:text="YouTube"
                 android:textColor="@color/brandYouTube"
-                android:textSize="13sp"
+                android:textSize="11sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="\u00b7 "
-                android:textColor="@color/textSecondary"
-                android:textSize="13sp" />
+                android:text="  ·  "
+                android:textColor="@color/textMuted"
+                android:textSize="11sp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:letterSpacing="0.1"
-                android:text="X "
+                android:letterSpacing="0.04"
+                android:text="X"
                 android:textColor="@color/brandTwitter"
-                android:textSize="13sp"
+                android:textSize="11sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="\u00b7 "
-                android:textColor="@color/textSecondary"
-                android:textSize="13sp" />
+                android:text="  ·  "
+                android:textColor="@color/textMuted"
+                android:textSize="11sp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:letterSpacing="0.1"
-                android:text="IG "
+                android:letterSpacing="0.04"
+                android:text="Instagram"
                 android:textColor="@color/brandInstagramEnd"
-                android:textSize="13sp"
+                android:textSize="11sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="\u00b7 "
-                android:textColor="@color/textSecondary"
-                android:textSize="13sp" />
+                android:text="  ·  "
+                android:textColor="@color/textMuted"
+                android:textSize="11sp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:letterSpacing="0.1"
-                android:text="FB"
+                android:letterSpacing="0.04"
+                android:text="Facebook"
                 android:textColor="@color/brandFacebook"
-                android:textSize="13sp"
+                android:textSize="11sp"
                 android:textStyle="bold" />
         </LinearLayout>
 

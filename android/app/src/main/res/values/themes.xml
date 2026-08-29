@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.GrabAm" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.Grab" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorSecondary">@color/colorSecondary</item>
         <item name="colorAccent">@color/colorAccent</item>
@@ -14,7 +14,7 @@
         <item name="android:textColorHint">@color/textSecondary</item>
     </style>
 
-    <style name="Theme.GrabAm.Transparent" parent="@android:style/Theme.Translucent.NoTitleBar">
+    <style name="Theme.Grab.Transparent" parent="@android:style/Theme.Translucent.NoTitleBar">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowContentOverlay">@null</item>
         <item name="android:backgroundDimEnabled">false</item>

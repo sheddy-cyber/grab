@@ -2,7 +2,7 @@
 
 ## Backend URL
 
-File: `android/app/src/main/java/com/grabam/service/DownloadService.kt`
+File: `android/app/src/main/java/com/grab/service/DownloadService.kt`
 
 ```kotlin
 const val BACKEND_URL = "http://YOUR_BACKEND_IP:8000/extract?url="
@@ -47,7 +47,7 @@ If you change the port, update `BACKEND_URL` in the Android app too.
 File: `android/app/build.gradle`
 
 ```gradle
-applicationId "com.grabam"
+applicationId "com.grab"
 ```
 
 Change this only if you want a different package name.
@@ -57,7 +57,7 @@ Change this only if you want a different package name.
 File: `android/app/src/main/res/values/strings.xml`
 
 ```xml
-<string name="app_name">grab am</string>
+<string name="app_name">grab</string>
 ```
 
 ## Test Backend Locally
@@ -101,7 +101,7 @@ curl "http://localhost:8000/extract?url=https://x.com/example/status/1234567890"
 ### Notifications do not appear
 
 - Grant notification permission on Android 13+.
-- Check that system notification settings allow grab am notifications.
+- Check that system notification settings allow grab notifications.
 
 ### Quick Settings tile does not download
 

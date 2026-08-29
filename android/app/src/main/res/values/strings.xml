@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">grab am</string>
-    <string name="app_description">Grab it. Save it. Easy.</string>
-    <string name="paste_link">Paste</string>
-    <string name="download">Grab video</string>
-    <string name="enter_url">Enter Twitter/X, YouTube, Facebook, or Instagram URL</string>
+    <string name="app_name">grab</string>
+    <string name="app_description">Capture any stream. Instantly.</string>
+    <string name="paste_link">Paste Link</string>
+    <string name="download">Download</string>
+    <string name="enter_url">Paste YouTube, X, Instagram, or Facebook link</string>
     <string name="download_started">Download started</string>
     <string name="invalid_url">Use a Twitter/X, YouTube, Facebook, or Instagram video URL</string>
     <string name="clipboard_empty">Clipboard is empty</string>
-    <string name="shortcut_download_short">Grab URL</string>
+    <string name="shortcut_download_short">Download URL</string>
     <string name="shortcut_download_long">Download from Clipboard</string>
+    <string name="no_internet">No internet connection</string>
 </resources>

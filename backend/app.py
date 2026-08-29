@@ -155,7 +155,7 @@ def extract_with_cobalt(video_url):
                                 if parsed_ext:
                                     ext = parsed_ext.lstrip('.')
                             else:
-                                title = f"grab_am_video_{int(time.time())}"
+                                title = f"grab_video_{int(time.time())}"
                             
                             title = title.replace('/', '_').replace('\\', '_').replace(':', '_')
 
@@ -179,7 +179,7 @@ def extract_with_cobalt(video_url):
                         for item in picker_items:
                             download_url = item.get('url')
                             if download_url:
-                                title = f"grab_am_picker_{int(time.time())}"
+                                title = f"grab_picker_{int(time.time())}"
                                 return {
                                     'download_url': download_url,
                                     'title': title,
@@ -364,19 +364,20 @@ def extract_video():
         logger.info(f"Extracting video from: {video_url}")
         platform = detect_platform(video_url)
         
-        # Strategy 1: For YouTube, Facebook, and Instagram, prioritize Cobalt.
+        # Strategy 1: For YouTube and Instagram, prioritize Cobalt.
         # - YouTube: bypasses datacenter IP blocks.
-        # - Facebook/Instagram: yt-dlp frequently needs authenticated cookies for
+        # - Instagram: yt-dlp frequently needs authenticated cookies for
         #   these platforms, so Cobalt (which proxies through its own session
         #   handling) tends to succeed far more often without any cookies file.
-        if platform in ('youtube', 'facebook', 'instagram'):
+        # (Facebook is excluded here because Cobalt's FB extractor often returns out-of-sync or low quality streams, so we rely on backend ffmpeg merging).
+        if platform in ('youtube', 'instagram'):
             cobalt_res = extract_with_cobalt(video_url)
             if cobalt_res:
                 logger.info(f"Successfully extracted video using Cobalt: {cobalt_res['title']}")
                 return jsonify(finalize_download_response(cobalt_res))
             logger.warning(f"Cobalt extraction failed for {platform}. Falling back to yt-dlp...")
             
-        # Strategy 2: For Twitter/X, or if Cobalt failed for YouTube/Facebook/Instagram, try yt-dlp
+        # Strategy 2: For Twitter/X, Facebook, or if Cobalt failed for YouTube/Instagram, try yt-dlp
         # On Hugging Face, Instagram/YouTube SSL connections often timeout.
         # Use a shorter yt-dlp timeout to fail fast and avoid killing the Gunicorn worker.
         is_hugging_face = 'SPACE_ID' in os.environ
@@ -476,9 +477,9 @@ def extract_video():
             
         if yt_dlp_error:
             # Only try Cobalt fallback if we didn't ALREADY try it as Strategy 1.
-            # For youtube/facebook/instagram, Cobalt was already attempted above —
+            # For youtube/instagram, Cobalt was already attempted above —
             # retrying with the same instances would just fail again.
-            already_tried_cobalt = platform in ('youtube', 'facebook', 'instagram')
+            already_tried_cobalt = platform in ('youtube', 'instagram')
             if not already_tried_cobalt:
                 logger.warning(f"yt-dlp failed: {yt_dlp_error}. Trying Cobalt fallback...")
                 cobalt_res = extract_with_cobalt(video_url)
@@ -520,12 +521,13 @@ def extract_video():
         # Its progressive streams are hard-capped at 720p (often defaulting to 360p).
         # To match Instagram's high quality, we must intentionally bypass progressive 
         # formats and send YouTube directly to the backend merger to mux 1080p DASH streams.
-        if platform == 'youtube' or not format_info or not has_audio_and_video(format_info):
-            reason = "YouTube high-quality enforcement" if platform == 'youtube' else "No single progressive file with audio found"
+        # Facebook's progressive streams are also notoriously low quality and suffer from audio/video desync, so we force them here too.
+        if platform in ('youtube', 'facebook') or not format_info or not has_audio_and_video(format_info):
+            reason = f"{platform.title()} high-quality enforcement" if platform in ('youtube', 'facebook') else "No single progressive file with audio found"
             logger.info(f"{reason}. Pointing to /download_merged fallback.")
             download_url = f"{request.host_url.rstrip('/')}/download_merged?url={urllib.parse.quote(video_url)}"
             # Return immediately with the proxy url
-            title = info.get('title', f'grab_am_video_{info.get("id", "unknown")}')
+            title = info.get('title', f'grab_video_{info.get("id", "unknown")}')
             title = title.replace('/', '_').replace('\\', '_').replace(':', '_')
             
             return jsonify(finalize_download_response({
@@ -555,7 +557,7 @@ def extract_video():
             return jsonify({'error': 'No playable video format found'}), 500
             
         # Get video title
-        title = info.get('title', f'grab_am_video_{info.get("id", "unknown")}')
+        title = info.get('title', f'grab_video_{info.get("id", "unknown")}')
         
         # Sanitize title
         title = title.replace('/', '_').replace('\\', '_').replace(':', '_')

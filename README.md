@@ -1,4 +1,4 @@
-# grab am - Social Video Downloader
+# grab - Social Video Downloader
 
 An Android app for downloading supported social media videos from the app, the Android share sheet, or a Quick Settings tile.
 
@@ -13,10 +13,10 @@ An Android app for downloading supported social media videos from the app, the A
 ## Features
 
 - **Direct Download**: Paste a supported video URL in the app and download it.
-- **Share Integration**: Share a Twitter/X, YouTube, Facebook, or Instagram link to grab am from another app.
+- **Share Integration**: Share a Twitter/X, YouTube, Facebook, or Instagram link to grab from another app.
 - **Quick Settings Tile**: Copy a supported URL, tap the tile, and start the download.
 - **Background Downloads**: Downloads run through a foreground service with progress notifications.
-- **Gallery Integration**: Downloads are saved to `Movies/grab am`.
+- **Gallery Integration**: Downloads are saved to `Movies/grab`.
 
 ## Quick Start
 
@@ -42,7 +42,7 @@ python app.py
 
 The backend starts on `http://0.0.0.0:8000`.
 
-Update `DownloadService.BACKEND_URL` in `android/app/src/main/java/com/grabam/service/DownloadService.kt` so the Android device can reach your backend:
+Update `DownloadService.BACKEND_URL` in `android/app/src/main/java/com/grab/service/DownloadService.kt` so the Android device can reach your backend:
 
 ```kotlin
 const val BACKEND_URL = "http://192.168.1.100:8000/extract?url="
@@ -83,19 +83,19 @@ The Android client downloads one direct media URL, so the backend prefers single
 
 1. Open Twitter/X, YouTube, Facebook, or Instagram.
 2. Share a video, status, or Shorts link.
-3. Select grab am.
+3. Select grab.
 4. The download starts automatically.
 
 ### Quick Settings Tile
 
-1. Add the grab am tile to Quick Settings.
+1. Add the grab tile to Quick Settings.
 2. Copy a supported video URL.
-3. Tap the grab am tile.
+3. Tap the grab tile.
 4. The download starts from the clipboard link.
 
 ### Direct Paste
 
-1. Open grab am.
+1. Open grab.
 2. Paste a supported video URL.
 3. Tap **Download**.
 
@@ -103,7 +103,7 @@ The Android client downloads one direct media URL, so the backend prefers single
 
 ```text
 android/
-  app/src/main/java/com/grabam/
+  app/src/main/java/com/grab/
     MainActivity.kt
     ShareActivity.kt
     quicksettings/

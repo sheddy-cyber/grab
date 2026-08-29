@@ -1,5 +1,4 @@
-import { Download, Share2, Copy } from "lucide-react";
-import posthog from "posthog-js";
+import { Download, ExternalLink } from "lucide-react";
 import "./index.css";
 
 function App() {
@@ -9,37 +8,31 @@ function App() {
         display: "flex",
         flexDirection: "column",
         minHeight: "100vh",
-        padding: "2rem",
+        padding: "1.5rem 1.5rem 3rem",
         alignItems: "center",
+        maxWidth: "1280px",
+        margin: "0 auto",
+        width: "100%",
       }}
     >
-      {/* Navbar/Header */}
+      {/* Header / Navbar */}
       <header
         style={{
           width: "100%",
-          maxWidth: "1200px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          paddingBottom: "4rem",
+          padding: "1rem 0 3.5rem",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+        <a href="/" className="brand-badge">
           <img
             src="/app_logo.png"
-            alt="grab am logo"
-            style={{ width: "48px", height: "48px", borderRadius: "12px" }}
+            alt="grab logo"
+            className="brand-emblem"
           />
-          <h1
-            style={{
-              fontSize: "1.5rem",
-              fontWeight: "800",
-              letterSpacing: "-0.5px",
-            }}
-          >
-            grab am
-          </h1>
-        </div>
+          <span className="brand-title">grab</span>
+        </a>
       </header>
 
       {/* Main Content */}
@@ -50,105 +43,129 @@ function App() {
           flexDirection: "column",
           alignItems: "center",
           width: "100%",
-          maxWidth: "800px",
           textAlign: "center",
         }}
       >
-        <h2
-          style={{
-            fontSize: "4rem",
-            fontWeight: "800",
-            lineHeight: "1.1",
-            marginBottom: "1.5rem",
-            letterSpacing: "-1.5px",
-          }}
-        >
-          The fastest way to <br />
-          <span className="text-gradient">grab your videos.</span>
-        </h2>
-
-        <p
-          style={{
-            fontSize: "1.25rem",
-            color: "var(--text-secondary)",
-            marginBottom: "3rem",
-            maxWidth: "600px",
-            lineHeight: "1.6",
-          }}
-        >
-          Download stunning content directly to your Android device from all
-          your favourite social platforms in just one tap.
-        </p>
-
-        {/* Action Cards */}
-        <div
+        {/* Hero Section */}
+        <section
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: "2rem",
+            alignItems: "center",
+            maxWidth: "840px",
+            marginBottom: "3.5rem",
+          }}
+        >
+          <h1
+            style={{
+              fontSize: "clamp(2rem, 5vw, 3.25rem)",
+              fontWeight: "700",
+              lineHeight: "1.08",
+              letterSpacing: "-0.02em",
+              marginBottom: "1.5rem",
+            }}
+          >
+            Download videos from social media.
+          </h1>
+
+          <p
+            style={{
+              fontSize: "clamp(1.05rem, 2vw, 1.25rem)",
+              color: "var(--text-secondary)",
+              maxWidth: "620px",
+              lineHeight: "1.6",
+            }}
+          >
+            Save videos from YouTube, X, Instagram, and Facebook directly to your device.
+          </p>
+        </section>
+
+        {/* Action Cards Grid */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+            gap: "1.75rem",
             width: "100%",
-            maxWidth: "500px",
+            maxWidth: "920px",
+            marginBottom: "6rem",
           }}
         >
           {/* Android Download Card */}
           <div
-            className="glass-card"
+            className="apex-card"
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: "1.5rem",
-              alignItems: "center",
+              alignItems: "flex-start",
+              textAlign: "left",
+              justifyContent: "space-between",
             }}
           >
-            <h3 style={{ fontSize: "1.5rem", fontWeight: "700" }}>
-              Get the Android App
-            </h3>
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>
-              Experience the full power of <em>grab am</em> on your phone.
-            </p>
-            <a 
-              href="/grab_am.apk" 
-              download="grab_am.apk" 
-              className="btn-gradient" 
-              style={{ width: '100%', textDecoration: 'none' }}
-              onClick={() => posthog.capture('download_apk_clicked')}
-            >
-              Download APK
-            </a>
-          </div>
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "1rem" }}>
+                <h2 style={{ fontSize: "1.4rem", fontWeight: "700" }}>
+                  Android App
+                </h2>
+              </div>
+              <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem", lineHeight: "1.6", marginBottom: "2rem" }}>
+                Download the APK to get share sheet integration and background downloads.
+              </p>
+            </div>
 
-          {/* Web Downloader Teaser Card */}
-          <div className="glass-card" style={{ padding: "2rem" }}>
-            <h3
-              style={{
-                fontSize: "1.25rem",
-                fontWeight: "700",
-                marginBottom: "1rem",
-                textAlign: "left",
-              }}
-            >
-              Web Downloader{" "}
-              <span
+            <div style={{ width: "100%" }}>
+              <a
+                href="/grab.apk"
+                download="grab.apk"
+                className="btn-titanium"
+                style={{ width: "100%", boxSizing: "border-box" }}
+              >
+                <Download size={20} />
+                <span>Download APK</span>
+              </a>
+              <p
                 style={{
-                  fontSize: "0.75rem",
-                  backgroundColor: "rgba(29, 161, 242, 0.2)",
-                  color: "var(--brand-twitter)",
-                  padding: "4px 8px",
-                  borderRadius: "12px",
-                  marginLeft: "8px",
-                  verticalAlign: "middle",
+                  fontSize: "0.8rem",
+                  color: "var(--text-muted)",
+                  textAlign: "center",
+                  marginTop: "0.75rem",
                 }}
               >
-                Coming Soon
-              </span>
-            </h3>
-            <div style={{ position: "relative" }}>
+                Android 8.0+ · Free · Direct Install
+              </p>
+            </div>
+          </div>
+
+          {/* Web Downloader Card */}
+          <div
+            className="apex-card"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+              textAlign: "left",
+              justifyContent: "space-between",
+            }}
+          >
+            <div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", marginBottom: "1rem" }}>
+                <h2 style={{ fontSize: "1.4rem", fontWeight: "700" }}>
+                  Web Downloader
+                </h2>
+              </div>
+              <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem", lineHeight: "1.6", marginBottom: "2rem" }}>
+                Browser-based video extraction is in development. Use the Android app for now.
+              </p>
+            </div>
+
+            <div style={{ width: "100%", position: "relative" }}>
               <input
                 type="text"
                 className="input-field"
                 placeholder="Paste video link here..."
                 disabled
                 title="Web downloading is coming soon!"
+                style={{ paddingRight: "100px" }}
               />
               <button
                 disabled
@@ -158,26 +175,28 @@ function App() {
                   top: "8px",
                   bottom: "8px",
                   background: "var(--surface-alt)",
-                  border: "none",
+                  border: "1px solid var(--surface-border)",
                   borderRadius: "10px",
-                  color: "var(--text-secondary)",
+                  color: "var(--text-muted)",
                   padding: "0 16px",
                   fontWeight: "700",
+                  fontFamily: "var(--font-body)",
                   cursor: "not-allowed",
+                  fontSize: "0.875rem",
                 }}
               >
-                Grab
+                grab
               </button>
             </div>
           </div>
         </div>
 
-        {/* Instructions Section */}
-        <div
+        {/* How It Works Section */}
+        <section
           style={{
-            marginTop: "6rem",
             width: "100%",
-            maxWidth: "1000px",
+            maxWidth: "1040px",
+            marginBottom: "6rem",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -185,138 +204,152 @@ function App() {
         >
           <h2
             style={{
-              fontSize: "2.5rem",
-              fontWeight: "800",
-              marginBottom: "1rem",
-              letterSpacing: "-0.5px",
+              fontSize: "2.25rem",
+              fontWeight: "700",
+              letterSpacing: "-0.03em",
+              marginBottom: "0.75rem",
             }}
           >
-            How it Works
+            How It Works
           </h2>
           <p
             style={{
               color: "var(--text-secondary)",
-              fontSize: "1.1rem",
-              marginBottom: "1rem",
-              textAlign: "center",
+              fontSize: "1.05rem",
+              marginBottom: "2.5rem",
             }}
           >
-            Two incredibly simple ways to get your videos.
+            Two effortless ways to capture your media.
           </p>
 
           <div className="steps-grid">
             <div className="step-card">
+              <div className="step-badge">01</div>
               <h3
                 style={{
-                  fontSize: "1.25rem",
+                  fontSize: "1.2rem",
                   fontWeight: "700",
-                  marginBottom: "0.5rem",
+                  marginBottom: "0.75rem",
                   display: "flex",
                   alignItems: "center",
-                  gap: "0.5rem",
+                  gap: "0.6rem",
                 }}
               >
-                <Download size={24} color="var(--brand-twitter)" /> Install the
-                App
+                Share
               </h3>
-              <p style={{ color: "var(--text-secondary)", lineHeight: "1.5" }}>
-                Download and install the <em>grab am</em> APK directly onto your Android
-                device.
+              <p style={{ color: "var(--text-secondary)", lineHeight: "1.6", fontSize: "0.95rem" }}>
+                Tap the share button on the video you want to download and select the grab app on the share sheet to start downloading.
               </p>
             </div>
 
             <div className="step-card">
+              <div className="step-badge">02</div>
               <h3
                 style={{
-                  fontSize: "1.25rem",
+                  fontSize: "1.2rem",
                   fontWeight: "700",
-                  marginBottom: "0.5rem",
+                  marginBottom: "0.75rem",
                   display: "flex",
                   alignItems: "center",
-                  gap: "0.5rem",
+                  gap: "0.6rem",
                 }}
               >
-                <Share2 size={24} color="var(--brand-instagram-start)" /> Share
-                to Download
+                Direct Paste
               </h3>
-              <p style={{ color: "var(--text-secondary)", lineHeight: "1.5" }}>
-                While watching a video on any social app, simply tap "Share" and
-                select <em>grab am</em> to download instantly.
-              </p>
-            </div>
-
-            <div className="step-card">
-              <h3
-                style={{
-                  fontSize: "1.25rem",
-                  fontWeight: "700",
-                  marginBottom: "0.5rem",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                }}
-              >
-                <Copy size={24} color="var(--brand-facebook)" /> Copy & Paste
-              </h3>
-              <p style={{ color: "var(--text-secondary)", lineHeight: "1.5" }}>
-                Prefer manual control? Copy any video link, open <em>grab am</em>, and tap "Paste Link" to download.
+              <p style={{ color: "var(--text-secondary)", lineHeight: "1.6", fontSize: "0.95rem" }}>
+                Or if you prefer manual download, open the app directly, paste a video link, and tap download.
               </p>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Supported Platforms */}
-        <div
+        <section
           style={{
-            marginTop: "6rem",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             gap: "1.5rem",
             width: "100%",
+            maxWidth: "800px",
+            marginBottom: "4rem",
           }}
         >
           <p
             style={{
-              color: "var(--text-secondary)",
-              fontSize: "0.9rem",
+              color: "var(--text-muted)",
+              fontSize: "0.8125rem",
               textTransform: "uppercase",
-              letterSpacing: "2px",
+              letterSpacing: "0.15em",
               fontWeight: "700",
             }}
           >
             Supported Platforms
           </p>
-          <div className="platforms-container">
-            <span style={{ color: "var(--brand-youtube)", padding: "0 1rem" }}>
-              YouTube
-            </span>
-            <span style={{ color: "var(--brand-twitter)", padding: "0 1rem" }}>
-              X
-            </span>
-            <span
-              style={{
-                color: "var(--brand-instagram-start)",
-                padding: "0 1rem",
-              }}
-            >
-              Instagram
-            </span>
-            <span style={{ color: "var(--brand-facebook)", padding: "0 1rem" }}>
-              Facebook
-            </span>
+
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              gap: "1rem",
+            }}
+          >
+            <div className="platform-chip">
+              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--brand-youtube)" }}></span>
+              <span>YouTube</span>
+            </div>
+            <div className="platform-chip">
+              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--brand-twitter)" }}></span>
+              <span>X (Twitter)</span>
+            </div>
+            <div className="platform-chip">
+              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--brand-instagram)" }}></span>
+              <span>Instagram</span>
+            </div>
+            <div className="platform-chip">
+              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--brand-facebook)" }}></span>
+              <span>Facebook</span>
+            </div>
           </div>
-        </div>
+        </section>
       </main>
 
+      {/* Footer */}
       <footer
         style={{
-          marginTop: "4rem",
-          color: "var(--text-secondary)",
+          width: "100%",
+          paddingTop: "2rem",
+          borderTop: "1px solid var(--surface-border)",
+          display: "flex",
+          flexWrap: "wrap",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "1rem",
+          color: "var(--text-muted)",
           fontSize: "0.875rem",
         }}
       >
-        &copy; 2026 grab am. All rights reserved.
+        <div>
+          &copy; 2026 grab
+        </div>
+        <div>
+          <a
+            href="https://krisshedrach.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: "var(--text-secondary)",
+              textDecoration: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+          >
+            <span>Created by Kris Shedrach</span>
+            <ExternalLink size={13} />
+          </a>
+        </div>
       </footer>
     </div>
   );

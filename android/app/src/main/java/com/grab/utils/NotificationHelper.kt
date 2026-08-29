@@ -1,4 +1,4 @@
-package com.grabam.utils
+package com.grab.utils
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -9,13 +9,13 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import com.grabam.R
+import com.grab.R
 
 class NotificationHelper(private val context: Context) {
 
     companion object {
-        const val CHANNEL_ID = "grab_am_downloads"
-        const val CHANNEL_NAME = "grab am Downloads"
+        const val CHANNEL_ID = "grab_downloads"
+        const val CHANNEL_NAME = "grab Downloads"
         const val NOTIFICATION_ID = 1001
     }
 
@@ -41,12 +41,14 @@ class NotificationHelper(private val context: Context) {
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(content)
-            .setSmallIcon(R.drawable.ic_download)
+            .setSmallIcon(android.R.drawable.stat_sys_download) // System standard animated download icon
+            .setColor(ContextCompat.getColor(context, R.color.textPrimary)) // Tint the progress bar to white (mature aesthetic)
             .setLargeIcon(appLogo())
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
+            .setGroup("GRAB_DOWNLOADS") // Group multiple downloads
     }
 
     private fun hasNotificationPermission(): Boolean {
@@ -59,19 +61,62 @@ class NotificationHelper(private val context: Context) {
         return true
     }
 
+    private fun getActionIntent(action: String, downloadId: Int): android.app.PendingIntent {
+        val intent = android.content.Intent(context, com.grab.service.DownloadService::class.java).apply {
+            this.action = action
+            putExtra(com.grab.service.DownloadService.EXTRA_DOWNLOAD_ID, downloadId)
+        }
+        return android.app.PendingIntent.getService(
+            context,
+            downloadId,
+            intent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
     fun updateProgress(
         builder: NotificationCompat.Builder,
         progress: Int,
         content: String? = null,
         indeterminate: Boolean = false,
-        notificationId: Int = NOTIFICATION_ID
+        notificationId: Int = NOTIFICATION_ID,
+        isPaused: Boolean = false
     ) {
         content?.let { builder.setContentText(it) }
         builder.setProgress(100, progress.coerceIn(0, 100), indeterminate)
         
+        builder.clearActions()
+        
+        if (isPaused) {
+            builder.setSmallIcon(android.R.drawable.ic_media_pause)
+            builder.addAction(
+                android.R.drawable.ic_media_play,
+                "Resume",
+                getActionIntent(com.grab.service.DownloadService.ACTION_RESUME_DOWNLOAD, notificationId)
+            )
+        } else {
+            builder.setSmallIcon(android.R.drawable.stat_sys_download)
+            builder.addAction(
+                android.R.drawable.ic_media_pause,
+                "Pause",
+                getActionIntent(com.grab.service.DownloadService.ACTION_PAUSE_DOWNLOAD, notificationId)
+            )
+        }
+        
+        builder.addAction(
+            android.R.drawable.ic_menu_close_clear_cancel,
+            "Cancel",
+            getActionIntent(com.grab.service.DownloadService.ACTION_CANCEL_DOWNLOAD, notificationId)
+        )
+        
         if (hasNotificationPermission()) {
             NotificationManagerCompat.from(context).notify(notificationId, builder.build())
         }
+    }
+
+    fun cancelNotification(notificationId: Int) {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(notificationId)
     }
 
     fun showComplete(title: String, videoUri: android.net.Uri? = null, mimeType: String = "video/mp4", notificationId: Int = NOTIFICATION_ID) {

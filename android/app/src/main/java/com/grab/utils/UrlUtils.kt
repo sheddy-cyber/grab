@@ -1,4 +1,4 @@
-package com.grabam.utils
+package com.grab.utils
 
 import java.net.URI
 

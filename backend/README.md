@@ -1,4 +1,4 @@
-# grab am Backend Service
+# grab Backend Service
 
 Flask service that uses `yt-dlp` to extract direct download URLs for supported videos.
 

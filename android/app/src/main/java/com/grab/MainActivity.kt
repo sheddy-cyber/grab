@@ -1,4 +1,4 @@
-package com.grabam
+package com.grab
 
 import android.Manifest
 import android.content.ClipboardManager
@@ -12,8 +12,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.material.textfield.TextInputEditText
-import com.grabam.utils.UrlUtils
-import com.grabam.service.DownloadService
+import com.grab.utils.UrlUtils
+import com.grab.utils.NetworkUtils
+import com.grab.service.DownloadService
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.method.LinkMovementMethod
@@ -106,6 +107,11 @@ class MainActivity : AppCompatActivity() {
         val videoUrl = UrlUtils.extractSupportedUrl(rawUrl)
         
         if (videoUrl != null) {
+            if (!NetworkUtils.isInternetAvailable(this)) {
+                Toast.makeText(this, R.string.no_internet, Toast.LENGTH_SHORT).show()
+                return
+            }
+
             val serviceIntent = Intent(this, DownloadService::class.java).apply {
                 action = DownloadService.ACTION_START_DOWNLOAD
                 putExtra(DownloadService.EXTRA_URL, videoUrl.url)
@@ -130,7 +136,7 @@ class MainActivity : AppCompatActivity() {
         val sharedPrefs = getSharedPreferences("grab_am_settings", MODE_PRIVATE)
         val currentUrl = sharedPrefs.getString("backend_url", DownloadService.DEFAULT_BACKEND_URL) ?: DownloadService.DEFAULT_BACKEND_URL
         
-        val builder = androidx.appcompat.app.AlertDialog.Builder(this)
+        val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
         builder.setTitle("Backend Settings")
         
         val input = com.google.android.material.textfield.TextInputEditText(this).apply {
