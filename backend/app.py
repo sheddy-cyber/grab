@@ -581,12 +581,10 @@ def extract_video():
         return jsonify({'error': str(e)}), 500
 
 def is_h264_codec(vcodec):
-    # yt-dlp uses 'avc1', 'avc', or 'h264' for H.264. 
-    # Reject 'hev1', 'hvc1' (H.265/HEVC) and 'av01' (AV1)
-    vcodec = (vcodec or '').lower()
-    if not vcodec or vcodec == 'none':
-        return False
-    return 'avc' in vcodec or 'h264' in vcodec
+    # The user requested to simplify and download whatever stable high quality format is available,
+    # regardless of WhatsApp compatibility (which previously required forcing H.264).
+    # We now accept any codec (including HEVC/AV1) to prioritize quality.
+    return True
 
 def choose_single_file_format(info):
     """Return the best direct format that yt-dlp can download to a single playable file."""
@@ -821,9 +819,9 @@ def download_merged():
     ydl_opts = {
         # Use a simple format chain to guarantee we always find a video stream
         'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio/best[ext=mp4]/best',
-        # But force yt-dlp to ALWAYS prioritize H.264 streams over HEVC/AV1, even if they are lower resolution.
-        # This completely solves the "unsupported media" issue on WhatsApp and older phones.
-        'format_sort': ['vcodec:h264', 'res', 'ext:mp4:m4a'],
+        # We prioritize resolution and quality over specific codecs (like H.264), 
+        # so we get the highest quality possible even if it's HEVC.
+        'format_sort': ['res', 'ext:mp4:m4a'],
         'outtmpl': output_template,
         'quiet': True,
         'no_warnings': True,
