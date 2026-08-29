@@ -389,16 +389,7 @@ def extract_video():
         logger.info(f"Extracting video from: {video_url}")
         platform = detect_platform(video_url)
         
-        # Strategy 1: For YouTube, prioritize Cobalt.
-        # - YouTube: bypasses datacenter IP blocks.
-        if platform in ('youtube',):
-            cobalt_res = extract_with_cobalt(video_url)
-            if cobalt_res:
-                logger.info(f"Successfully extracted video using Cobalt: {cobalt_res['title']}")
-                return jsonify(finalize_download_response(cobalt_res))
-            logger.warning(f"Cobalt extraction failed for {platform}. Falling back to yt-dlp...")
-            
-        # Strategy 2: For Twitter/X, Facebook, Instagram, or if Cobalt failed for YouTube, try yt-dlp
+        # Strategy 1: Attempt native extraction using yt-dlp (fastest, full control over codecs)
         # On Hugging Face, YouTube SSL connections often timeout.
         # Use a shorter yt-dlp timeout to fail fast and avoid killing the Gunicorn worker.
         is_hugging_face = 'SPACE_ID' in os.environ
@@ -497,18 +488,13 @@ def extract_video():
             yt_dlp_error = str(e)
             
         if yt_dlp_error:
-            # Only try Cobalt fallback if we didn't ALREADY try it as Strategy 1.
-            # For youtube/instagram, Cobalt was already attempted above —
-            # retrying with the same instances would just fail again.
-            already_tried_cobalt = platform in ('youtube', 'instagram')
-            if not already_tried_cobalt:
-                logger.warning(f"yt-dlp failed: {yt_dlp_error}. Trying Cobalt fallback...")
-                cobalt_res = extract_with_cobalt(video_url)
-                if cobalt_res:
-                    logger.info(f"Successfully extracted video using Cobalt fallback: {cobalt_res['title']}")
-                    return jsonify(finalize_download_response(cobalt_res))
-            else:
-                logger.warning(f"yt-dlp failed: {yt_dlp_error}. Cobalt was already tried — skipping redundant retry.")
+            # Strategy 2: Fallback to Cobalt API instances
+            # If yt-dlp gets rate-limited (HTTP 429) or bot-blocked (YouTube), we try Cobalt APIs.
+            logger.warning(f"yt-dlp failed: {yt_dlp_error}. Trying Cobalt fallback...")
+            cobalt_res = extract_with_cobalt(video_url)
+            if cobalt_res:
+                logger.info(f"Successfully extracted video using Cobalt fallback: {cobalt_res['title']}")
+                return jsonify(finalize_download_response(cobalt_res))
             
             # If both failed, return the original yt-dlp error or bot block message
             error_msg = yt_dlp_error
