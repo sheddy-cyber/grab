@@ -583,34 +583,42 @@ def extract_video():
 def is_h264_codec(vcodec, platform='unknown'):
     # Force H.264 for ALL platforms to prevent black-screen AV1/HEVC playback issues on Android.
     vcodec = (vcodec or '').lower()
-    if not vcodec or vcodec == 'none':
+    
+    # Twitter progressive streams often lack codec metadata in yt-dlp ('unknown' or 'none'),
+    # but they are universally H.264 MP4s.
+    if platform == 'twitter_x' and (not vcodec or vcodec == 'none' or vcodec == 'unknown'):
+        return True
+        
+    if not vcodec or vcodec == 'none' or vcodec == 'unknown':
         return False
     return 'avc' in vcodec or 'h264' in vcodec
 
 def choose_single_file_format(info, platform='unknown'):
-    """Return the best direct format that yt-dlp can download to a single playable file."""
-    # First check if the main info dict itself is a valid direct format
-    if info.get('url') and has_audio_and_video(info) and is_direct_progressive_format(info) and is_h264_codec(info.get('vcodec'), platform):
-        return info
+    formats = info.get('formats', [])
+    if not formats:
+        return {}
+        
+    def score(fmt):
+        ext = (fmt.get('ext') or '').lower()
+        height = fmt.get('height') or 0
+        # Heavily penalize resolutions strictly greater than 1080p (like 4K/1440p)
+        # because many Android hardware decoders fail to decode 4K H.264, resulting in a black screen.
+        height_score = height if height <= 1080 else (1080 - (height - 1080))
+        
+        return (
+            1 if ext == 'mp4' else 0,
+            height_score,
+            fmt.get('tbr') or 0,
+            fmt.get('filesize') or fmt.get('filesize_approx') or 0,
+        )
 
-    formats = info.get('formats') or []
-    
     # Priority 1: Progressive formats with both audio and video (single file, directly playable)
     progressive_candidates = [
         fmt for fmt in formats
         if fmt.get('url') and has_audio_and_video(fmt) and is_direct_progressive_format(fmt) and is_h264_codec(fmt.get('vcodec'), platform)
     ]
-
+    
     if progressive_candidates:
-        def score(fmt):
-            ext = (fmt.get('ext') or '').lower()
-            return (
-                1 if ext == 'mp4' else 0,
-                fmt.get('height') or 0,
-                fmt.get('width') or 0,
-                fmt.get('tbr') or 0,
-                fmt.get('filesize') or fmt.get('filesize_approx') or 0,
-            )
         return max(progressive_candidates, key=score)
 
     # Priority 2: Video-only progressive formats (might work if audio is embedded)
@@ -622,15 +630,6 @@ def choose_single_file_format(info, platform='unknown'):
     ]
 
     if video_only_candidates:
-        def score(fmt):
-            ext = (fmt.get('ext') or '').lower()
-            return (
-                1 if ext == 'mp4' else 0,
-                fmt.get('height') or 0,
-                fmt.get('width') or 0,
-                fmt.get('tbr') or 0,
-                fmt.get('filesize') or fmt.get('filesize_approx') or 0,
-            )
         return max(video_only_candidates, key=score)
 
     # Fallback: check main info dict
@@ -829,8 +828,8 @@ def download_merged():
     ydl_opts = {
         # Use a simple format chain to guarantee we always find a video stream
         'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio/best[ext=mp4]/best',
-        # Force H.264 for ALL platforms to prevent black-screen AV1/HEVC issues on Android.
-        'format_sort': ['vcodec:h264', 'res', 'ext:mp4:m4a'],
+        # Force H.264 and cap resolution at 1080p to prevent black-screen AV1/4K issues on older Androids.
+        'format_sort': ['vcodec:h264', 'res:1080', 'ext:mp4:m4a'],
         'outtmpl': output_template,
         'quiet': True,
         'no_warnings': True,
