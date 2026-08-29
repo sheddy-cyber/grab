@@ -581,13 +581,7 @@ def extract_video():
         return jsonify({'error': str(e)}), 500
 
 def is_h264_codec(vcodec, platform='unknown'):
-    # The user requested to simplify and download whatever stable high quality format is available for Instagram,
-    # regardless of WhatsApp compatibility (which requires forcing H.264).
-    if platform == 'instagram':
-        return True
-    
-    # For Facebook and YouTube, we MUST force H.264 because if we allow HEVC/AV1, 
-    # many Android phones will fail to decode the video, resulting in a black screen with only audio.
+    # Force H.264 for ALL platforms to prevent black-screen AV1/HEVC playback issues on Android.
     vcodec = (vcodec or '').lower()
     if not vcodec or vcodec == 'none':
         return False
@@ -829,9 +823,8 @@ def download_merged():
     ydl_opts = {
         # Use a simple format chain to guarantee we always find a video stream
         'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio/best[ext=mp4]/best',
-        # Force H.264 for YouTube and Facebook to prevent black-screen AV1/HEVC issues on Android,
-        # but allow high-quality HEVC for Instagram as requested by the user.
-        'format_sort': ['res', 'ext:mp4:m4a'] if platform == 'instagram' else ['vcodec:h264', 'res', 'ext:mp4:m4a'],
+        # Force H.264 for ALL platforms to prevent black-screen AV1/HEVC issues on Android.
+        'format_sort': ['vcodec:h264', 'res', 'ext:mp4:m4a'],
         'outtmpl': output_template,
         'quiet': True,
         'no_warnings': True,
