@@ -147,6 +147,7 @@ class NotificationHelper(private val context: Context) {
             .setCustomBigContentView(customView)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
+            .setGroup("GRAB_DOWNLOADS")
             .setContentIntent(contentIntent)
         
         notificationManager.cancel(notificationId)
@@ -173,6 +174,7 @@ class NotificationHelper(private val context: Context) {
             .setCustomBigContentView(customView)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
+            .setGroup("GRAB_DOWNLOADS")
         
         notificationManager.cancel(notificationId)
         if (hasNotificationPermission()) {
