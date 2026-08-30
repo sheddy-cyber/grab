@@ -132,12 +132,19 @@ class NotificationHelper(private val context: Context) {
             )
         }
 
+        val customView = android.widget.RemoteViews(context.packageName, R.layout.notification_download)
+        customView.setTextViewText(R.id.tvTitle, "Download Complete")
+        customView.setTextViewText(R.id.tvContent, title)
+        customView.setViewVisibility(R.id.progressBar, android.view.View.GONE)
+        customView.setViewVisibility(R.id.btnCancel, android.view.View.GONE)
+
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setContentTitle("Download Complete")
             .setContentText(title)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(title))
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
-            .setLargeIcon(appLogo())
+            .setStyle(androidx.core.app.NotificationCompat.DecoratedCustomViewStyle())
+            .setCustomContentView(customView)
+            .setCustomBigContentView(customView)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
             .setContentIntent(contentIntent)
@@ -150,12 +157,20 @@ class NotificationHelper(private val context: Context) {
 
     fun showError(message: String, notificationId: Int = NOTIFICATION_ID) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        
+        val customView = android.widget.RemoteViews(context.packageName, R.layout.notification_download)
+        customView.setTextViewText(R.id.tvTitle, "Download Failed")
+        customView.setTextViewText(R.id.tvContent, message)
+        customView.setViewVisibility(R.id.progressBar, android.view.View.GONE)
+        customView.setViewVisibility(R.id.btnCancel, android.view.View.GONE)
+
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setContentTitle("Download Failed")
             .setContentText(message)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
             .setSmallIcon(android.R.drawable.stat_notify_error)
-            .setLargeIcon(appLogo())
+            .setStyle(androidx.core.app.NotificationCompat.DecoratedCustomViewStyle())
+            .setCustomContentView(customView)
+            .setCustomBigContentView(customView)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
         
@@ -167,12 +182,20 @@ class NotificationHelper(private val context: Context) {
 
     fun showMessage(title: String, message: String) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        
+        val customView = android.widget.RemoteViews(context.packageName, R.layout.notification_download)
+        customView.setTextViewText(R.id.tvTitle, title)
+        customView.setTextViewText(R.id.tvContent, message)
+        customView.setViewVisibility(R.id.progressBar, android.view.View.GONE)
+        customView.setViewVisibility(R.id.btnCancel, android.view.View.GONE)
+
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(message)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
             .setSmallIcon(R.drawable.ic_download)
-            .setLargeIcon(appLogo())
+            .setStyle(androidx.core.app.NotificationCompat.DecoratedCustomViewStyle())
+            .setCustomContentView(customView)
+            .setCustomBigContentView(customView)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
 
