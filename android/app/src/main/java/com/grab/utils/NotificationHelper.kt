@@ -14,7 +14,7 @@ import com.grab.R
 class NotificationHelper(private val context: Context) {
 
     companion object {
-        const val CHANNEL_ID = GROUP_KEY
+        const val CHANNEL_ID = "grab_downloads"
         const val CHANNEL_NAME = "grab Downloads"
         const val NOTIFICATION_ID = 1001
         const val GROUP_KEY = "GRAB_DOWNLOADS"
