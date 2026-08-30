@@ -38,7 +38,8 @@ class DownloadService : Service() {
             val url: String,
             var isCancelled: Boolean = false,
             var job: Job? = null,
-            var builder: androidx.core.app.NotificationCompat.Builder? = null
+            var builder: androidx.core.app.NotificationCompat.Builder? = null,
+            var activeCall: okhttp3.Call? = null
         )
         
         val activeDownloads = java.util.concurrent.ConcurrentHashMap<Int, DownloadTask>()
@@ -79,8 +80,8 @@ class DownloadService : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val httpClient = OkHttpClient.Builder()
         .connectTimeout(60, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.MINUTES)
-        .writeTimeout(30, TimeUnit.MINUTES)
+        .readTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS)
         .build()
     private lateinit var notificationHelper: NotificationHelper
 
@@ -104,6 +105,7 @@ class DownloadService : Service() {
                 activeDownloads[id]?.let {
                     it.isCancelled = true
                     it.job?.cancel()
+                    it.activeCall?.cancel()
                     activeDownloads.remove(id)
                     notificationHelper.cancelNotification(id)
                     checkStopService(startId)
@@ -175,7 +177,7 @@ class DownloadService : Service() {
                 val apiUrl = getFormattedApiUrl(this@DownloadService, encodedUrl)
                 Log.d("GrabDownload", "Calling API: $apiUrl")
                 
-                val response = requestExtraction(apiUrl)
+                val response = requestExtraction(apiUrl, downloadId)
                 
                 Log.d("GrabDownload", "Backend response: $response")
                 val json = JSONObject(response)
@@ -252,11 +254,13 @@ class DownloadService : Service() {
         }
     }
 
-    private fun requestExtraction(apiUrl: String): String {
+    private fun requestExtraction(apiUrl: String, downloadId: Int): String {
         val request = Request.Builder().url(apiUrl).build()
+        val call = httpClient.newCall(request)
+        activeDownloads[downloadId]?.activeCall = call
 
         return try {
-            httpClient.newCall(request).execute().use { response ->
+            call.execute().use { response ->
                 val body = response.body?.string().orEmpty()
                 if (!response.isSuccessful) {
                     val error = runCatching { JSONObject(body).optString("error") }.getOrNull()
@@ -304,8 +308,10 @@ class DownloadService : Service() {
         
         val request = requestBuilder.build()
         val shouldAppend = false
+        val call = httpClient.newCall(request)
+        activeDownloads[downloadId]?.activeCall = call
         
-        httpClient.newCall(request).execute().use { response ->
+        call.execute().use { response ->
             if (!response.isSuccessful) {
                 throw Exception("Failed to download file (HTTP ${response.code})")
             }
