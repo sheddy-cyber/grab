@@ -198,14 +198,16 @@ class DownloadService : Service() {
                 resultUri = videoUri.first
                 resultMimeType = videoUri.second
                 resultTitle = title
-            } catch (e: Exception) {
-                if (e is CancellationException || activeDownloads[downloadId]?.isCancelled == true) {
+            } catch (e: Throwable) {
+                if (activeDownloads[downloadId]?.isCancelled == true) {
                     Log.d("GrabDownload", "Download cancelled by user")
-                    // Do not show error notification if cancelled
+                    // Do not show error notification if cancelled by user
                     return@launch
                 }
                 Log.e("GrabDownload", "Download failed", e)
-                errorMsg = if (!NetworkUtils.isInternetAvailable(this@DownloadService)) {
+                errorMsg = if (e is CancellationException) {
+                    "Download was stopped unexpectedly by the system."
+                } else if (!NetworkUtils.isInternetAvailable(this@DownloadService)) {
                     "No internet connection. Please check your network."
                 } else {
                     val rawMsg = e.message ?: e.toString()
@@ -233,12 +235,12 @@ class DownloadService : Service() {
                 
                 if (errorMsg != null) {
                     notificationHelper.showError(errorMsg, downloadId)
-                    withContext(Dispatchers.Main) {
+                    withContext(Dispatchers.Main + NonCancellable) {
                         android.widget.Toast.makeText(this@DownloadService, errorMsg, android.widget.Toast.LENGTH_LONG).show()
                     }
                 } else if (resultTitle != null) {
                     notificationHelper.showComplete(resultTitle, resultUri, resultMimeType ?: "video/mp4", downloadId)
-                    withContext(Dispatchers.Main) {
+                    withContext(Dispatchers.Main + NonCancellable) {
                         android.widget.Toast.makeText(this@DownloadService, "Download completed", android.widget.Toast.LENGTH_SHORT).show()
                     }
                 }
