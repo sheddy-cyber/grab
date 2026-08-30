@@ -285,69 +285,18 @@ class DownloadService : Service() {
         var resolvedMimeType = mimeType.ifBlank { mimeTypeForExtension(resolvedExtension) }
         var formatDetected = false
 
-        while (true) {
-            try {
-                val requestBuilder = Request.Builder().url(url)
-                val defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-                requestBuilder.header("User-Agent", defaultUserAgent)
-                requestBuilder.header("Accept", "video/webm,video/mp4,video/*;q=0.9,*/*;q=0.8")
-
-                if (downloadedBytes > 0) {
-                    requestBuilder.header("Range", "bytes=$downloadedBytes-")
-                }
-
-                if (!isProxiedDownload(url)) {
-                    headers.forEach { (name, value) ->
-                        if (name.isNotBlank() && value.isNotBlank() &&
-                            name.lowercase() in ALLOWED_DOWNLOAD_HEADERS
-                        ) {
-                            requestBuilder.header(name, value)
-                        }
-                    }
-                }
-
-                val request = requestBuilder.build()
-
-                httpClient.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) {
-                        if (response.code == 416 && downloadedBytes > 0) {
-                            // Range Not Satisfiable might mean we are done
-                            return@use
-                        }
-                        val errorMessage = response.body?.string()?.let { raw ->
-                            runCatching { JSONObject(raw).optString("error") }.getOrNull()?.takeIf { it.isNotBlank() }
-                        }
-                        throw Exception(errorMessage ?: "Failed to download file: HTTP ${response.code}")
-                    }
-                    
-                    val isPartial = response.code == 206
-                    val shouldAppend = downloadedBytes > 0 && isPartial
-                    
-                    if (downloadedBytes > 0 && !isPartial) {
-                        // Server ignored Range header. We must restart the download.
-                        downloadedBytes = 0L
-                        totalBytes = -1L
-                        formatDetected = false
-                    }
-                    
-                    val body = response.body ?: throw Exception("Empty response body")
-                    
-                    if (totalBytes == -1L) {
-                        val contentLength = body.contentLength()
-                        if (contentLength > 0) {
-                            totalBytes = if (isPartial) downloadedBytes + contentLength else contentLength
-                        }
-                    }
 
         val requestBuilder = Request.Builder().url(url)
         val defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
         requestBuilder.header("User-Agent", defaultUserAgent)
         requestBuilder.header("Accept", "video/webm,video/mp4,video/*;q=0.9,*/*;q=0.8")
 
-        for ((key, value) in headers) {
-            val lowerKey = key.lowercase()
-            if (ALLOWED_DOWNLOAD_HEADERS.contains(lowerKey)) {
-                requestBuilder.header(key, value)
+        if (!isProxiedDownload(url)) {
+            for ((key, value) in headers) {
+                val lowerKey = key.lowercase()
+                if (ALLOWED_DOWNLOAD_HEADERS.contains(lowerKey)) {
+                    requestBuilder.header(key, value)
+                }
             }
         }
         
