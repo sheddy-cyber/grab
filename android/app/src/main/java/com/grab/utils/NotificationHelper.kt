@@ -14,9 +14,11 @@ import com.grab.R
 class NotificationHelper(private val context: Context) {
 
     companion object {
-        const val CHANNEL_ID = "grab_downloads"
+        const val CHANNEL_ID = GROUP_KEY
         const val CHANNEL_NAME = "grab Downloads"
         const val NOTIFICATION_ID = 1001
+        const val GROUP_KEY = "GRAB_DOWNLOADS"
+        const val SUMMARY_ID = 1000
     }
 
     init {
@@ -56,7 +58,7 @@ class NotificationHelper(private val context: Context) {
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .setGroup("GRAB_DOWNLOADS")
+            .setGroup(GROUP_KEY)
     }
 
     private fun hasNotificationPermission(): Boolean {
@@ -80,6 +82,20 @@ class NotificationHelper(private val context: Context) {
             intent,
             android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
         )
+    }
+
+    private fun updateGroupSummary() {
+        if (!hasNotificationPermission()) return
+        
+        val summaryBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setContentTitle("grab Downloads")
+            .setSmallIcon(android.R.drawable.stat_sys_download)
+            .setStyle(NotificationCompat.InboxStyle().setSummaryText("Downloads"))
+            .setGroup(GROUP_KEY)
+            .setGroupSummary(true)
+            .setAutoCancel(false)
+            
+        NotificationManagerCompat.from(context).notify(SUMMARY_ID, summaryBuilder.build())
     }
 
     fun updateProgress(
@@ -107,6 +123,7 @@ class NotificationHelper(private val context: Context) {
         
         if (hasNotificationPermission()) {
             NotificationManagerCompat.from(context).notify(notificationId, builder.build())
+            updateGroupSummary()
         }
     }
 
@@ -147,12 +164,13 @@ class NotificationHelper(private val context: Context) {
             .setCustomBigContentView(customView)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
-            .setGroup("GRAB_DOWNLOADS")
+            .setGroup(GROUP_KEY)
             .setContentIntent(contentIntent)
         
         notificationManager.cancel(notificationId)
         if (hasNotificationPermission()) {
             notificationManager.notify(System.currentTimeMillis().toInt(), builder.build())
+            updateGroupSummary()
         }
     }
 
@@ -174,11 +192,12 @@ class NotificationHelper(private val context: Context) {
             .setCustomBigContentView(customView)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
-            .setGroup("GRAB_DOWNLOADS")
+            .setGroup(GROUP_KEY)
         
         notificationManager.cancel(notificationId)
         if (hasNotificationPermission()) {
             notificationManager.notify(System.currentTimeMillis().toInt(), builder.build())
+            updateGroupSummary()
         }
     }
 
