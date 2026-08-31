@@ -119,6 +119,15 @@ class DownloadService : Service() {
         if (activeDownloads.isEmpty()) {
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
+        } else {
+            val nextActive = activeDownloads.entries.firstOrNull()
+            if (nextActive != null) {
+                val nextId = nextActive.key
+                val nextBuilder = nextActive.value.builder
+                if (nextBuilder != null) {
+                    startForeground(nextId, nextBuilder.build())
+                }
+            }
         }
     }
 
@@ -233,6 +242,15 @@ class DownloadService : Service() {
                 
                 if (activeDownloads.isEmpty()) {
                     stopForeground(STOP_FOREGROUND_REMOVE)
+                } else {
+                    val nextActive = activeDownloads.entries.firstOrNull()
+                    if (nextActive != null) {
+                        val nextId = nextActive.key
+                        val nextBuilder = nextActive.value.builder
+                        if (nextBuilder != null) {
+                            startForeground(nextId, nextBuilder.build())
+                        }
+                    }
                 }
                 
                 if (errorMsg != null) {
