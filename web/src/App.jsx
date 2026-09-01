@@ -133,7 +133,7 @@ function App() {
                   marginTop: "0.75rem",
                 }}
               >
-                Android 8.0+ &bull; Free &bull; ~2.6 MB
+                Android 8.0+ &bull; Free &bull; 3 MB
               </p>
             </div>
           </div>
