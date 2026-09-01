@@ -118,6 +118,7 @@ class DownloadService : Service() {
     private fun checkStopService(startId: Int) {
         if (activeDownloads.isEmpty()) {
             stopForeground(STOP_FOREGROUND_REMOVE)
+            notificationHelper.cancelGroupSummary()
             stopSelf()
         } else {
             val nextActive = activeDownloads.entries.firstOrNull()
@@ -242,6 +243,7 @@ class DownloadService : Service() {
                 
                 if (activeDownloads.isEmpty()) {
                     stopForeground(STOP_FOREGROUND_REMOVE)
+                    notificationHelper.cancelGroupSummary()
                 } else {
                     val nextActive = activeDownloads.entries.firstOrNull()
                     if (nextActive != null) {
@@ -485,6 +487,7 @@ class DownloadService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        notificationHelper.cancelGroupSummary()
         serviceScope.cancel()
     }
 }

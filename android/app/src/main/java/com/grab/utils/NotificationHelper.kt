@@ -132,6 +132,11 @@ class NotificationHelper(private val context: Context) {
         notificationManager.cancel(notificationId)
     }
 
+    fun cancelGroupSummary() {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(SUMMARY_ID)
+    }
+
     fun showComplete(title: String, videoUri: android.net.Uri? = null, mimeType: String = "video/mp4", notificationId: Int = NOTIFICATION_ID) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         
