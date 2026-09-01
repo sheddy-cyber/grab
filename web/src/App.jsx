@@ -1,4 +1,5 @@
 import { Download, ExternalLink } from "lucide-react";
+import posthog from 'posthog-js';
 import "./index.css";
 
 function App() {
@@ -119,6 +120,7 @@ function App() {
                 download="grab.apk"
                 className="btn-titanium"
                 style={{ width: "100%", boxSizing: "border-box" }}
+                onClick={() => posthog.capture('download_apk_clicked')}
               >
                 <Download size={20} />
                 <span>Download APK</span>
