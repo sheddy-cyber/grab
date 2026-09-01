@@ -93,7 +93,7 @@ class NotificationHelper(private val context: Context) {
             .setStyle(NotificationCompat.InboxStyle().setSummaryText("Downloads"))
             .setGroup(GROUP_KEY)
             .setGroupSummary(true)
-            .setAutoCancel(false)
+            .setAutoCancel(true)
             
         NotificationManagerCompat.from(context).notify(SUMMARY_ID, summaryBuilder.build())
     }

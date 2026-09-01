@@ -12,6 +12,24 @@ import com.grab.utils.NetworkUtils
 class ShareActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Android 14 requires the app to be in a visible foreground state to start a dataSync Foreground Service.
+        // We create a minimal UI so this Activity isn't considered "transparent" or "background" by the OS.
+        val layout = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            gravity = android.view.Gravity.CENTER
+            setPadding(64, 64, 64, 64)
+            setBackgroundColor(android.graphics.Color.parseColor("#222222"))
+            
+            addView(android.widget.ProgressBar(this@ShareActivity))
+            addView(android.widget.TextView(this@ShareActivity).apply {
+                text = "Starting grab..."
+                setTextColor(android.graphics.Color.WHITE)
+                setPadding(0, 32, 0, 0)
+            })
+        }
+        setContentView(layout)
+
         handleIntent(intent)
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
             finish()
