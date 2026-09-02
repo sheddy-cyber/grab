@@ -315,6 +315,48 @@ function App() {
             </div>
           </div>
         </section>
+
+        {/* Tips Section */}
+        <section
+          style={{
+            width: "100%",
+            maxWidth: "1040px",
+            marginBottom: "6rem",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
+          <div className="apex-card" style={{ width: "100%", maxWidth: "800px", textAlign: "left" }}>
+            <h2
+              style={{
+                fontSize: "1.4rem",
+                fontWeight: "700",
+                marginBottom: "1.25rem",
+              }}
+            >
+              Few tips:
+            </h2>
+            <ol
+              style={{
+                color: "var(--text-secondary)",
+                fontSize: "0.95rem",
+                lineHeight: "1.7",
+                paddingLeft: "1.5rem",
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.75rem",
+              }}
+            >
+              <li>
+                A video may fail to download on the first try (due to server cold starts). Retry it immediately and it should work.
+              </li>
+              <li>
+                Downloading from Twitter using the share menu is a bit buggy. Don't scroll right away after sharing&mdash;wait until the download has progressed significantly.
+              </li>
+            </ol>
+          </div>
+        </section>
       </main>
 
       {/* Footer */}
