@@ -16,6 +16,71 @@ CORS(app)  # Enable CORS for all routes
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+_APP_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def _prepare_cookie_file():
+    """
+    Find yt-dlp cookies without keeping them in git, and return a writable copy.
+
+    Sources, first match wins:
+      1. COOKIES_TXT env var  - the file's contents (handy on hosts without secret files)
+      2. COOKIES_FILE env var - a path to the file
+      3. /etc/secrets/cookies.txt - Render "Secret Files" mount
+      4. cookies.txt next to app.py - local development (git-ignored)
+
+    yt-dlp writes refreshed cookies back to the file it is given, and secret mounts
+    are read-only, so we always hand it a private copy in the temp directory.
+    """
+    import tempfile
+
+    content = os.environ.get('COOKIES_TXT', '').strip()
+    source = 'COOKIES_TXT environment variable' if content else None
+
+    if not content:
+        candidates = [
+            os.environ.get('COOKIES_FILE', ''),
+            '/etc/secrets/cookies.txt',
+            os.path.join(_APP_DIR, 'cookies.txt'),
+        ]
+        for path in candidates:
+            if path and os.path.isfile(path):
+                try:
+                    with open(path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                    source = path
+                    break
+                except OSError as e:
+                    logger.warning(f"Could not read cookies from {path}: {e}")
+
+    if not content:
+        logger.info("No cookies configured; continuing without them.")
+        return None
+
+    if not content.lstrip().startswith('# Netscape HTTP Cookie File') and \
+            not content.lstrip().startswith('# HTTP Cookie File'):
+        # yt-dlp refuses files without this header; add it rather than fail.
+        content = '# Netscape HTTP Cookie File\n' + content
+    if not content.endswith('\n'):
+        content += '\n'
+
+    target = os.path.join(tempfile.gettempdir(), 'grab_cookies.txt')
+    try:
+        with open(target, 'w', encoding='utf-8') as f:
+            f.write(content)
+        os.chmod(target, 0o600)
+    except OSError as e:
+        logger.error(f"Could not write working copy of cookies: {e}")
+        return None
+
+    entries = sum(1 for line in content.splitlines()
+                  if line.strip() and (not line.startswith('#') or line.startswith('#HttpOnly_')))
+    logger.info(f"Loaded {entries} cookies from {source}")
+    return target
+
+
+COOKIE_FILE = _prepare_cookie_file()
+
 # Cache for cobalt.directory instance list (avoids re-fetching on fallback)
 _cobalt_cache = {'urls': {}, 'ts': 0}
 _COBALT_CACHE_TTL = 300  # seconds — longer TTL to reduce API calls
@@ -435,13 +500,12 @@ def extract_video():
             }
         }
 
-        # If a custom cookies file exists in the directory, use it to authenticate
+        # Use configured cookies (see _prepare_cookie_file) to authenticate.
         # This helps with Facebook/Instagram auth and YouTube bot detection
         # (PO token server handles the cryptographic challenge; cookies provide the session)
         cookies_loaded = False
-        if os.path.exists('cookies.txt'):
-            logger.info("Loading custom cookies from cookies.txt")
-            ydl_opts['cookiefile'] = 'cookies.txt'
+        if COOKIE_FILE:
+            ydl_opts['cookiefile'] = COOKIE_FILE
             cookies_loaded = True
         
         # Also try browser cookies for platforms that need them (Facebook, Instagram, YouTube)
@@ -466,7 +530,7 @@ def extract_video():
                     continue
         
         if not cookies_loaded and platform in ('facebook', 'instagram'):
-            logger.warning(f"No cookies loaded for {platform} - extraction may fail due to authentication requirements. Create a cookies.txt file or set USE_BROWSER_COOKIES=1")
+            logger.warning(f"No cookies loaded for {platform} - extraction may fail due to authentication requirements. Add a cookies.txt secret file (or COOKIES_TXT env var), or set USE_BROWSER_COOKIES=1")
         
         # Extract video info with a hard timeout to prevent Gunicorn worker death
         def _extract(url, opts):
@@ -507,7 +571,7 @@ def extract_video():
                 return jsonify({'error': 'YouTube bot detection blocked the request. The visionos client bypass may not be available in this yt-dlp version.'}), 500
             elif is_bot_detection and is_hugging_face:
                 logger.error("YouTube bot detection blocked the request on Hugging Face.")
-                return jsonify({'error': 'YouTube bot detection blocked the request. Please upload a cookies.txt file to your Hugging Face Space.'}), 500
+                return jsonify({'error': 'YouTube bot detection blocked the request. Add fresh YouTube cookies via the COOKIES_TXT secret.'}), 500
             elif is_login_required and platform in ('facebook', 'instagram'):
                 logger.error(f"{platform} requires authentication. Please provide cookies.txt or enable USE_BROWSER_COOKIES.")
                 return jsonify({'error': f'{platform.title()} requires login. Please provide a cookies.txt file with your Facebook/Instagram session cookies, or set USE_BROWSER_COOKIES=1 environment variable.'}), 500
@@ -845,7 +909,7 @@ def download_merged():
         'outtmpl': output_template,
         'quiet': True,
         'no_warnings': True,
-        'cookiefile': 'cookies.txt' if os.path.exists('cookies.txt') else None,
+        'cookiefile': COOKIE_FILE,
         'merge_output_format': 'mp4',
         'no_mtime': True, # Don't set file modification time to upload date
         'postprocessor_args': {

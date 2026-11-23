@@ -83,15 +83,18 @@ curl "http://localhost:8000/extract?url=https://x.com/example/status/1234567890"
 
 ## Optional Cookies
 
-For content that requires login:
+Some videos (and YouTube bot checks) need a logged-in session. Export browser cookies in
+Netscape `cookies.txt` format, ideally from a spare account, and give them to the backend
+**without committing them**. The backend checks, in order:
 
-1. Export browser cookies to `cookies.txt`.
-2. Save the file in `backend/`.
-3. Add this to `ydl_opts` in `app.py`:
+1. `COOKIES_TXT` environment variable containing the file's contents
+2. `COOKIES_FILE` environment variable pointing at a file
+3. `/etc/secrets/cookies.txt` (Render **Environment → Secret Files**, filename `cookies.txt`)
+4. `backend/cookies.txt` for local development (git-ignored)
 
-```python
-'cookiefile': 'cookies.txt',
-```
+It copies them to a private temp file at startup because yt-dlp writes refreshed cookies back,
+and secret mounts are read-only. The startup log says where the cookies were loaded from.
+Restart the service after changing them.
 
 ## Production Notes
 
