@@ -110,7 +110,7 @@ function App() {
                 </h2>
               </div>
               <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem", lineHeight: "1.6", marginBottom: "2rem" }}>
-                Download the APK to get share sheet integration and background downloads.
+                Download the APK to get share sheet integration, background downloads, and a live download history.
               </p>
             </div>
 
@@ -133,7 +133,7 @@ function App() {
                   marginTop: "0.75rem",
                 }}
               >
-                Android 8.0+ &bull; Free &bull; 3 MB
+                Android 7.0+ &bull; Free &bull; v1.3.0 &bull; 3 MB
               </p>
             </div>
           </div>
@@ -259,7 +259,7 @@ function App() {
                 Direct Paste
               </h3>
               <p style={{ color: "var(--text-secondary)", lineHeight: "1.6", fontSize: "0.95rem" }}>
-                Or if you prefer manual download, open the app directly, paste a video link, and tap download.
+                Or open the app, tap Paste link, then Download. You can also add the grab tile to Quick Settings and tap it after copying a link.
               </p>
             </div>
           </div>
@@ -298,7 +298,7 @@ function App() {
               }}
             >
               <li>
-                A video may fail to download on the first try (due to server cold starts). Retry it immediately and it should work.
+                The first download after a quiet period can take up to a minute while the server wakes up. grab retries automatically, and if it still fails you can tap Retry in the app or the notification.
               </li>
               <li>
                 Downloading from Twitter using the share menu is a bit buggy. Don't scroll right away after sharing&mdash;wait until the download has progressed significantly.
