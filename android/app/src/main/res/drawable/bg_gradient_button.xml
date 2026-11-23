@@ -2,13 +2,23 @@
 <ripple xmlns:android="http://schemas.android.com/apk/res/android"
     android:color="#33000000">
     <item>
-        <shape android:shape="rectangle">
-            <corners android:radius="14dp"/>
-            <gradient
-                android:angle="90"
-                android:startColor="#E6ECF5"
-                android:endColor="#FFFFFF"
-                android:type="linear" />
-        </shape>
+        <selector>
+            <item android:state_enabled="false">
+                <shape android:shape="rectangle">
+                    <corners android:radius="14dp" />
+                    <solid android:color="@color/colorSurfaceAlt" />
+                </shape>
+            </item>
+            <item>
+                <shape android:shape="rectangle">
+                    <corners android:radius="14dp" />
+                    <gradient
+                        android:angle="90"
+                        android:endColor="#FFFFFF"
+                        android:startColor="#E6ECF5"
+                        android:type="linear" />
+                </shape>
+            </item>
+        </selector>
     </item>
 </ripple>

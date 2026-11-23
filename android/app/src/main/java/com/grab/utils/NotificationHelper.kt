@@ -2,235 +2,168 @@ package com.grab.utils
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
-import android.graphics.BitmapFactory
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
-import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.grab.MainActivity
 import com.grab.R
+import com.grab.service.DownloadService
 
+/**
+ * Uses standard notification templates so progress, actions and dark mode
+ * all look native on every Android version.
+ */
 class NotificationHelper(private val context: Context) {
 
     companion object {
         const val CHANNEL_ID = "grab_downloads"
-        const val CHANNEL_NAME = "grab Downloads"
+        const val RESULT_CHANNEL_ID = "grab_results"
         const val NOTIFICATION_ID = 1001
-        const val GROUP_KEY = "GRAB_DOWNLOADS"
-        const val SUMMARY_ID = 1000
     }
+
+    private val manager = NotificationManagerCompat.from(context)
 
     init {
-        createNotificationChannel()
+        createChannels()
     }
 
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                CHANNEL_NAME,
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
+    private fun createChannels() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        nm.createNotificationChannel(
+            NotificationChannel(CHANNEL_ID, "Download progress", NotificationManager.IMPORTANCE_LOW).apply {
                 description = "Shows progress of video downloads"
+                setShowBadge(false)
             }
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        }
-    }
-
-    fun getBaseNotification(title: String, content: String, downloadId: Int): NotificationCompat.Builder {
-        val customView = android.widget.RemoteViews(context.packageName, R.layout.notification_download)
-        customView.setTextViewText(R.id.tvTitle, title)
-        customView.setTextViewText(R.id.tvContent, content)
-        customView.setProgressBar(R.id.progressBar, 100, 0, true)
-        
-        val cancelIntent = getActionIntent(com.grab.service.DownloadService.ACTION_CANCEL_DOWNLOAD, downloadId)
-        customView.setOnClickPendingIntent(R.id.btnCancel, cancelIntent)
-
-        return NotificationCompat.Builder(context, CHANNEL_ID)
-            .setContentTitle(title) // kept in extras for retrieval
-            .setSmallIcon(android.R.drawable.stat_sys_download)
-            .setStyle(androidx.core.app.NotificationCompat.DecoratedCustomViewStyle())
-            .setCustomContentView(customView)
-            .setCustomBigContentView(customView)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setCategory(NotificationCompat.CATEGORY_PROGRESS)
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setGroup(GROUP_KEY)
-    }
-
-    private fun hasNotificationPermission(): Boolean {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            return ContextCompat.checkSelfPermission(
-                context,
-                android.Manifest.permission.POST_NOTIFICATIONS
-            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-        }
-        return true
-    }
-
-    private fun getActionIntent(action: String, downloadId: Int): android.app.PendingIntent {
-        val intent = android.content.Intent(context, com.grab.service.DownloadService::class.java).apply {
-            this.action = action
-            putExtra(com.grab.service.DownloadService.EXTRA_DOWNLOAD_ID, downloadId)
-        }
-        return android.app.PendingIntent.getService(
-            context,
-            downloadId,
-            intent,
-            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+        nm.createNotificationChannel(
+            NotificationChannel(RESULT_CHANNEL_ID, "Finished downloads", NotificationManager.IMPORTANCE_DEFAULT).apply {
+                description = "Tells you when a video is saved or a download fails"
+                setSound(null, null)
+            }
         )
     }
 
-    private fun updateGroupSummary() {
-        if (!hasNotificationPermission()) return
-        
-        val summaryBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setContentTitle("grab Downloads")
+    fun buildProgress(
+        downloadId: Int,
+        title: String,
+        text: String,
+        progress: Int,
+        indeterminate: Boolean
+    ): NotificationCompat.Builder {
+        return NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_download)
-            .setStyle(NotificationCompat.InboxStyle().setSummaryText("Downloads"))
-            .setGroup(GROUP_KEY)
-            .setGroupSummary(true)
-            .setAutoCancel(true)
-            
-        NotificationManagerCompat.from(context).notify(SUMMARY_ID, summaryBuilder.build())
+            .setContentTitle(title)
+            .setContentText(text)
+            .setProgress(100, progress.coerceIn(0, 100), indeterminate)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setSilent(true)
+            .setCategory(NotificationCompat.CATEGORY_PROGRESS)
+            .setColor(ContextCompat.getColor(context, R.color.colorAccent))
+            .setContentIntent(openAppIntent(downloadId * 4))
+            .addAction(0, context.getString(R.string.cancel), cancelIntent(downloadId))
     }
 
     fun updateProgress(
-        builder: NotificationCompat.Builder,
+        downloadId: Int,
+        title: String,
+        text: String,
         progress: Int,
-        content: String? = null,
-        indeterminate: Boolean = false,
-        notificationId: Int = NOTIFICATION_ID
+        indeterminate: Boolean
     ) {
-        val title = builder.build().extras.getString(NotificationCompat.EXTRA_TITLE) ?: "grab"
-        
-        val customView = android.widget.RemoteViews(context.packageName, R.layout.notification_download)
-        customView.setTextViewText(R.id.tvTitle, title)
-        if (content != null) {
-            customView.setTextViewText(R.id.tvContent, content)
-            builder.setContentText(content) // keep extra updated
-        }
-        customView.setProgressBar(R.id.progressBar, 100, progress.coerceIn(0, 100), indeterminate)
-        
-        val cancelIntent = getActionIntent(com.grab.service.DownloadService.ACTION_CANCEL_DOWNLOAD, notificationId)
-        customView.setOnClickPendingIntent(R.id.btnCancel, cancelIntent)
-        
-        builder.setCustomContentView(customView)
-        builder.setCustomBigContentView(customView)
-        
-        if (hasNotificationPermission()) {
-            NotificationManagerCompat.from(context).notify(notificationId, builder.build())
-            updateGroupSummary()
-        }
+        notify(downloadId, buildProgress(downloadId, title, text, progress, indeterminate))
     }
 
-    fun cancelNotification(notificationId: Int) {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.cancel(notificationId)
-    }
+    fun cancelNotification(notificationId: Int) = manager.cancel(notificationId)
 
-    fun cancelGroupSummary() {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.cancel(SUMMARY_ID)
-    }
-
-    fun showComplete(title: String, videoUri: android.net.Uri? = null, mimeType: String = "video/mp4", notificationId: Int = NOTIFICATION_ID) {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        
-        val contentIntent = videoUri?.let {
-            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
-                setDataAndType(it, mimeType)
-                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            android.app.PendingIntent.getActivity(
-                context,
-                0,
-                intent,
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
-            )
+    fun showComplete(resultId: Int, title: String, videoUri: Uri, mimeType: String) {
+        val view = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(videoUri, mimeType)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
         }
+        val share = Intent.createChooser(
+            Intent(Intent.ACTION_SEND).apply {
+                type = mimeType
+                putExtra(Intent.EXTRA_STREAM, videoUri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            },
+            context.getString(R.string.share_video)
+        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
-        val customView = android.widget.RemoteViews(context.packageName, R.layout.notification_download)
-        customView.setTextViewText(R.id.tvTitle, "Download Complete")
-        customView.setTextViewText(R.id.tvContent, title)
-        customView.setViewVisibility(R.id.progressBar, android.view.View.GONE)
-        customView.setViewVisibility(R.id.btnCancel, android.view.View.GONE)
-
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setContentTitle("Download Complete")
-            .setContentText(title)
+        val builder = NotificationCompat.Builder(context, RESULT_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
-            .setStyle(androidx.core.app.NotificationCompat.DecoratedCustomViewStyle())
-            .setCustomContentView(customView)
-            .setCustomBigContentView(customView)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentTitle(context.getString(R.string.notif_saved_title))
+            .setContentText(title)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(title))
+            .setColor(ContextCompat.getColor(context, R.color.colorAccent))
             .setAutoCancel(true)
-            .setGroup(GROUP_KEY)
-            .setContentIntent(contentIntent)
-        
-        notificationManager.cancel(notificationId)
-        if (hasNotificationPermission()) {
-            notificationManager.notify(System.currentTimeMillis().toInt(), builder.build())
-            updateGroupSummary()
-        }
+            .setContentIntent(activityIntent(resultId * 4, view))
+            .addAction(0, context.getString(R.string.play), activityIntent(resultId * 4 + 1, view))
+            .addAction(0, context.getString(R.string.share), activityIntent(resultId * 4 + 2, share))
+        notify(resultId, builder)
     }
 
-    fun showError(message: String, notificationId: Int = NOTIFICATION_ID) {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        
-        val customView = android.widget.RemoteViews(context.packageName, R.layout.notification_download)
-        customView.setTextViewText(R.id.tvTitle, "Download Failed")
-        customView.setTextViewText(R.id.tvContent, message)
-        customView.setViewVisibility(R.id.progressBar, android.view.View.GONE)
-        customView.setViewVisibility(R.id.btnCancel, android.view.View.GONE)
-
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setContentTitle("Download Failed")
-            .setContentText(message)
+    fun showError(resultId: Int, message: String, sourceUrl: String?) {
+        val builder = NotificationCompat.Builder(context, RESULT_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_notify_error)
-            .setStyle(androidx.core.app.NotificationCompat.DecoratedCustomViewStyle())
-            .setCustomContentView(customView)
-            .setCustomBigContentView(customView)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setAutoCancel(true)
-            .setGroup(GROUP_KEY)
-        
-        notificationManager.cancel(notificationId)
-        if (hasNotificationPermission()) {
-            notificationManager.notify(System.currentTimeMillis().toInt(), builder.build())
-            updateGroupSummary()
-        }
-    }
-
-    fun showMessage(title: String, message: String) {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        
-        val customView = android.widget.RemoteViews(context.packageName, R.layout.notification_download)
-        customView.setTextViewText(R.id.tvTitle, title)
-        customView.setTextViewText(R.id.tvContent, message)
-        customView.setViewVisibility(R.id.progressBar, android.view.View.GONE)
-        customView.setViewVisibility(R.id.btnCancel, android.view.View.GONE)
-
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setContentTitle(title)
+            .setContentTitle(context.getString(R.string.notif_failed_title))
             .setContentText(message)
-            .setSmallIcon(R.drawable.ic_download)
-            .setStyle(androidx.core.app.NotificationCompat.DecoratedCustomViewStyle())
-            .setCustomContentView(customView)
-            .setCustomBigContentView(customView)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+            .setColor(ContextCompat.getColor(context, R.color.error))
             .setAutoCancel(true)
+            .setContentIntent(openAppIntent(resultId * 4))
+        if (sourceUrl != null) {
+            val retry = Intent(context, MainActivity::class.java).apply {
+                action = MainActivity.ACTION_RETRY
+                putExtra(DownloadService.EXTRA_URL, sourceUrl)
+                addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            }
+            builder.addAction(0, context.getString(R.string.retry), activityIntent(resultId * 4 + 3, retry))
+        }
+        notify(resultId, builder)
+    }
 
-        if (hasNotificationPermission()) {
-            notificationManager.notify(System.currentTimeMillis().toInt(), builder.build())
+    private fun notify(id: Int, builder: NotificationCompat.Builder) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) !=
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) return
+        try {
+            manager.notify(id, builder.build())
+        } catch (_: SecurityException) {
         }
     }
 
-    private fun appLogo() =
-        BitmapFactory.decodeResource(context.resources, R.drawable.app_logo)
-            ?: BitmapFactory.decodeResource(context.resources, R.drawable.ic_download)
+    private fun openAppIntent(requestCode: Int): PendingIntent {
+        val intent = Intent(context, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        return activityIntent(requestCode, intent)
+    }
+
+    private fun activityIntent(requestCode: Int, intent: Intent): PendingIntent =
+        PendingIntent.getActivity(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+    private fun cancelIntent(downloadId: Int): PendingIntent {
+        val intent = Intent(context, DownloadService::class.java).apply {
+            action = DownloadService.ACTION_CANCEL_DOWNLOAD
+            putExtra(DownloadService.EXTRA_DOWNLOAD_ID, downloadId)
+        }
+        return PendingIntent.getService(
+            context,
+            downloadId,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
 }

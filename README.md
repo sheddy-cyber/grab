@@ -12,11 +12,14 @@ An Android app for downloading supported social media videos from the app, the A
 
 ## Features
 
-- **Direct Download**: Paste a supported video URL in the app and download it.
+- **Direct Download**: One button pastes your copied link, detects the platform, then downloads it.
+- **Recent Downloads**: Live progress (percent, size, speed) with thumbnails; tap to play, retry failures, share, copy link, or cancel.
 - **Share Integration**: Share a Twitter/X, YouTube, Facebook, or Instagram link to grab from another app.
-- **Quick Settings Tile**: Copy a supported URL, tap the tile, and start the download.
-- **Background Downloads**: Downloads run through a foreground service with progress notifications.
-- **Gallery Integration**: Downloads are saved to `Movies/grab`.
+- **Quick Settings Tile & App Shortcut**: Copy a supported URL, tap the grab tile (or long-press the app icon → "Download from clipboard").
+- **Background Downloads**: Downloads run through a foreground service with progress notifications, plus Play/Share/Retry actions when they finish.
+- **Resilient**: Retries automatically while a sleeping backend wakes up, checks free space first, and shows clear error messages.
+- **Gallery Integration**: Downloads stream straight into `Movies/grab`, keeping the video's title as the file name.
+- **Backend Settings**: Change the backend URL in-app and test the connection.
 
 ## Quick Start
 
@@ -42,13 +45,9 @@ python app.py
 
 The backend starts on `http://0.0.0.0:8000`.
 
-Update `DownloadService.BACKEND_URL` in `android/app/src/main/java/com/grab/service/DownloadService.kt` so the Android device can reach your backend:
+Point the app at your backend from **Settings (gear icon) → Backend URL**, e.g. `http://192.168.1.100:8000`, and tap **Test connection**. The built-in default lives in `BackendConfig.DEFAULT_BACKEND_URL` (`android/app/src/main/java/com/grab/utils/BackendConfig.kt`).
 
-```kotlin
-const val BACKEND_URL = "http://192.168.1.100:8000/extract?url="
-```
-
-Use `10.0.2.2` when testing from the Android emulator against a backend running on your computer.
+Use `http://10.0.2.2:8000` when testing from the Android emulator against a backend running on your computer.
 
 ## Backend Contract
 
@@ -122,7 +121,7 @@ backend/
 ## Troubleshooting
 
 - Confirm the backend is running and reachable from the phone or emulator.
-- Verify `BACKEND_URL` points to the correct IP address and port.
+- Verify the backend URL in Settings points to the correct IP address and port.
 - Test `http://YOUR_IP:8000/health` from the device browser.
 - Update `yt-dlp` if extraction starts failing for YouTube, Twitter/X, Facebook, or Instagram.
 - Grant notification permission if progress notifications do not appear.

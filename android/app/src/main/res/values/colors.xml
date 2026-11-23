@@ -31,6 +31,7 @@
     
     <color name="outline_soft">#262A38</color>
     <color name="error">#F43F5E</color>
+    <color name="success">#34D399</color>
 
     <!-- Legacy / Utility -->
     <color name="black">#FF000000</color>

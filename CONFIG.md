@@ -2,25 +2,13 @@
 
 ## Backend URL
 
-File: `android/app/src/main/java/com/grab/service/DownloadService.kt`
+Set it in the app: tap the gear icon, enter the backend URL, and use **Test connection**.
 
-```kotlin
-const val BACKEND_URL = "http://YOUR_BACKEND_IP:8000/extract?url="
-```
+- Physical device on the same network: `http://192.168.1.100:8000` (your computer's LAN IP)
+- Android emulator with the backend on the same computer: `http://10.0.2.2:8000`
 
-Use your computer's LAN IP for a physical Android device:
-
-```kotlin
-const val BACKEND_URL = "http://192.168.1.100:8000/extract?url="
-```
-
-Use the Android emulator host alias when the backend runs on the same computer:
-
-```kotlin
-const val BACKEND_URL = "http://10.0.2.2:8000/extract?url="
-```
-
-The current source uses `http://172.16.0.2:8000/extract?url=`. Change it if that IP is not reachable from your test device.
+The default used on first launch is `BackendConfig.DEFAULT_BACKEND_URL` in
+`android/app/src/main/java/com/grab/utils/BackendConfig.kt`. A trailing `/extract?url=` is stripped automatically.
 
 ## Android SDK
 
@@ -40,7 +28,7 @@ File: `backend/app.py`
 app.run(host='0.0.0.0', port=8000, debug=True)
 ```
 
-If you change the port, update `BACKEND_URL` in the Android app too.
+If you change the port, update the backend URL in the app's settings too.
 
 ## App ID
 
@@ -87,7 +75,7 @@ curl "http://localhost:8000/extract?url=https://x.com/example/status/1234567890"
 ### Android app cannot connect to backend
 
 - Verify the backend is running.
-- Verify `BACKEND_URL` uses an IP reachable from the device.
+- Verify the backend URL in the app's settings uses an IP reachable from the device (use **Test connection**).
 - Check firewall rules for port `8000`.
 - Use `10.0.2.2` only for the Android emulator.
 
@@ -107,4 +95,4 @@ curl "http://localhost:8000/extract?url=https://x.com/example/status/1234567890"
 
 - Copy a supported video URL before tapping the tile.
 - Unlock the phone if Android asks; clipboard reads happen from a foreground activity.
-- If the clipboard text is unsupported, the tile shows a short error toast instead of starting the service.
+- The tile opens grab, which reads the clipboard; if it holds no supported link, a short message is shown instead of starting a download.

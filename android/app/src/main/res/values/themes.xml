@@ -2,23 +2,71 @@
 <resources>
     <style name="Theme.Grab" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorOnPrimary">@color/textOnPrimary</item>
         <item name="colorSecondary">@color/colorSecondary</item>
         <item name="colorAccent">@color/colorAccent</item>
-        
+        <item name="colorError">@color/error</item>
+        <item name="colorSurface">@color/colorSurface</item>
+        <item name="colorSurfaceContainerHigh">@color/colorSurfaceAlt</item>
+        <item name="colorOnSurface">@color/textPrimary</item>
+        <item name="colorOnSurfaceVariant">@color/textSecondary</item>
+
         <item name="android:windowBackground">@color/colorBackground</item>
         <item name="android:statusBarColor">@color/colorBackground</item>
         <item name="android:navigationBarColor">@color/colorBackground</item>
         <item name="android:windowLightStatusBar">false</item>
-        
+
         <item name="android:textColor">@color/textPrimary</item>
         <item name="android:textColorHint">@color/textSecondary</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.Grab.Dialog</item>
+        <item name="popupMenuStyle">@style/Widget.Grab.PopupMenu</item>
     </style>
 
-    <style name="Theme.Grab.Transparent" parent="@android:style/Theme.Translucent.NoTitleBar">
+    <style name="ThemeOverlay.Grab.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorSurface">@color/colorSurface</item>
+        <item name="colorSurfaceContainerHigh">@color/colorSurfaceAlt</item>
+        <item name="colorPrimary">@color/textPrimary</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.Grab.Dialog</item>
+    </style>
+
+    <style name="Widget.Grab.PopupMenu" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">@drawable/bg_card</item>
+    </style>
+
+    <style name="ShapeAppearance.Grab.Dialog" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">20dp</item>
+    </style>
+
+    <style name="ShapeAppearance.Grab.Thumb" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+
+    <!-- Compact floating card shown when a link is shared to grab -->
+    <style name="Theme.Grab.Share" parent="Theme.Material3.Dark.Dialog">
         <item name="android:windowBackground">@android:color/transparent</item>
-        <item name="android:windowContentOverlay">@null</item>
-        <item name="android:backgroundDimEnabled">false</item>
-        <item name="android:windowAnimationStyle">@null</item>
-        <item name="android:windowDisablePreview">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowCloseOnTouchOutside">true</item>
+        <item name="android:backgroundDimAmount">0.35</item>
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="android:textColor">@color/textPrimary</item>
+    </style>
+
+    <style name="PlatformLabel">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:letterSpacing">0.04</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="PlatformDot">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:text">"  ·  "</item>
+        <item name="android:textColor">@color/textMuted</item>
+        <item name="android:textSize">11sp</item>
     </style>
 </resources>

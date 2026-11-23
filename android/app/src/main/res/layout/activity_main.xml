@@ -1,240 +1,287 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/colorBackground"
-    android:clipToPadding="false"
-    android:fillViewport="true"
     tools:context=".MainActivity">
 
-    <LinearLayout
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        android:orientation="vertical"
-        android:paddingStart="24dp"
-        android:paddingEnd="24dp"
-        android:paddingBottom="32dp">
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:fillViewport="true">
 
-        <!-- Top bar with settings icon -->
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingTop="16dp"
-            android:paddingBottom="0dp">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSettings"
-                style="@style/Widget.Material3.Button.IconButton"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_gravity="end"
-                android:contentDescription="Settings"
-                app:icon="@drawable/ic_settings"
-                app:iconTint="@color/textSecondary" />
-        </FrameLayout>
-
-        <!-- Logo and App Branding -->
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
             android:gravity="center_horizontal"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:paddingBottom="24dp">
 
-            <ImageView
-                android:id="@+id/ivLogo"
-                android:layout_width="72dp"
-                android:layout_height="72dp"
-                android:adjustViewBounds="true"
-                android:contentDescription="@string/app_name"
-                android:scaleType="fitCenter"
-                android:src="@drawable/app_logo" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:letterSpacing="0.06"
-                android:text="grab"
-                android:textColor="@color/textPrimary"
-                android:textSize="24sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvDescription"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:text="@string/app_description"
-                android:textColor="@color/textSecondary"
-                android:textSize="14sp" />
-        </LinearLayout>
-
-        <!-- Spacer -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="40dp" />
-
-        <!-- URL Input -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/tilUrl"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/enter_url"
-            android:textColorHint="@color/textSecondary"
-            app:boxBackgroundColor="@color/colorSurface"
-            app:boxCornerRadiusBottomEnd="14dp"
-            app:boxCornerRadiusBottomStart="14dp"
-            app:boxCornerRadiusTopEnd="14dp"
-            app:boxCornerRadiusTopStart="14dp"
-            app:boxStrokeColor="@color/colorPrimary"
-            app:boxStrokeWidth="1.5dp"
-            app:boxStrokeWidthFocused="2dp"
-            app:hintTextColor="@color/textSecondary">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etUrl"
+            <!-- Top bar with settings icon -->
+            <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="textUri"
-                android:paddingTop="16dp"
-                android:paddingBottom="16dp"
-                android:singleLine="true"
-                android:textColor="@color/textPrimary"
-                android:textSize="15sp" />
-        </com.google.android.material.textfield.TextInputLayout>
+                android:paddingTop="12dp">
 
-        <!-- Spacer -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="20dp" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSettings"
+                    style="@style/Widget.Material3.Button.IconButton"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="end"
+                    android:contentDescription="@string/settings"
+                    app:icon="@drawable/ic_settings"
+                    app:iconTint="@color/textSecondary" />
+            </FrameLayout>
 
-        <!-- Download button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnDownload"
-            style="@style/Widget.Material3.Button"
-            android:layout_width="match_parent"
-            android:layout_height="58dp"
-            android:text="@string/download"
-            android:textAllCaps="false"
-            android:textColor="@color/textOnPrimary"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:background="@drawable/bg_gradient_button"
-            app:backgroundTint="@null"
-            app:cornerRadius="14dp"
-            app:icon="@drawable/ic_download"
-            app:iconGravity="textStart"
-            app:iconTint="@color/textOnPrimary" />
-
-        <!-- Paste button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnPaste"
-            style="@style/Widget.Material3.Button"
-            android:layout_width="match_parent"
-            android:layout_height="54dp"
-            android:layout_marginTop="12dp"
-            android:text="@string/paste_link"
-            android:textAllCaps="false"
-            android:textColor="@color/textPrimary"
-            android:textSize="15sp"
-            android:background="@drawable/bg_secondary_button"
-            app:backgroundTint="@null"
-            app:cornerRadius="14dp"
-            app:icon="@drawable/ic_paste"
-            app:iconGravity="textStart"
-            app:iconTint="@color/textPrimary" />
-
-        <!-- Spacer to push content to bottom -->
-        <Space
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
-
-        <!-- Supported platforms container -->
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:layout_marginBottom="12dp"
-            android:background="@drawable/bg_secondary_button"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
+            <!-- Logo and app branding -->
+            <LinearLayout
+                android:id="@+id/hero"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:letterSpacing="0.04"
-                android:text="YouTube"
-                android:textColor="@color/brandYouTube"
-                android:textSize="11sp"
-                android:textStyle="bold" />
+                android:layout_marginTop="8dp"
+                android:gravity="center_horizontal"
+                android:orientation="vertical">
 
-            <TextView
+                <ImageView
+                    android:id="@+id/ivLogo"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:adjustViewBounds="true"
+                    android:contentDescription="@string/app_name"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/app_logo" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:letterSpacing="0.06"
+                    android:text="@string/app_name"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvDescription"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/app_description"
+                    android:textColor="@color/textSecondary"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <!-- URL input -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilUrl"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="36dp"
+                android:hint="@string/enter_url"
+                android:textColorHint="@color/textSecondary"
+                app:boxBackgroundColor="@color/colorSurface"
+                app:boxCornerRadiusBottomEnd="14dp"
+                app:boxCornerRadiusBottomStart="14dp"
+                app:boxCornerRadiusTopEnd="14dp"
+                app:boxCornerRadiusTopStart="14dp"
+                app:boxStrokeColor="@color/colorPrimary"
+                app:boxStrokeErrorColor="@color/error"
+                app:boxStrokeWidth="1.5dp"
+                app:boxStrokeWidthFocused="2dp"
+                app:endIconContentDescription="@string/paste"
+                app:endIconDrawable="@drawable/ic_paste"
+                app:endIconMode="custom"
+                app:endIconTint="@color/textSecondary"
+                app:errorIconDrawable="@null"
+                app:errorTextColor="@color/error"
+                app:helperTextEnabled="true"
+                app:helperTextTextColor="@color/textMuted"
+                app:hintTextColor="@color/textSecondary"
+                app:startIconDrawable="@drawable/ic_link"
+                app:startIconTint="@color/textMuted">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etUrl"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:imeOptions="actionGo"
+                    android:inputType="textUri"
+                    android:paddingTop="16dp"
+                    android:paddingBottom="16dp"
+                    android:singleLine="true"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="15sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Primary action: "Paste link" when empty, "Download" once a link is in -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDownload"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="match_parent"
+                android:layout_height="58dp"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_gradient_button"
+                android:text="@string/paste_link"
+                android:textAllCaps="false"
+                android:textColor="@color/textOnPrimary"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:backgroundTint="@null"
+                app:cornerRadius="14dp"
+                app:icon="@drawable/ic_paste"
+                app:iconGravity="textStart"
+                app:iconTint="@color/textOnPrimary" />
+
+            <!-- Recent downloads -->
+            <LinearLayout
+                android:id="@+id/recentHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:letterSpacing="0.08"
+                    android:text="@string/recent"
+                    android:textAllCaps="true"
+                    android:textColor="@color/textSecondary"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnClear"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:minWidth="0dp"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:text="@string/clear"
+                    android:textAllCaps="false"
+                    android:textColor="@color/textSecondary"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvRecent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never"
+                android:visibility="gone"
+                tools:itemCount="3"
+                tools:listitem="@layout/item_download" />
+
+            <!-- Empty state tip -->
+            <LinearLayout
+                android:id="@+id/tipCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/tip_title"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:lineSpacingExtra="2dp"
+                    android:text="@string/tip_body"
+                    android:textColor="@color/textSecondary"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <!-- Spacer to push footer to the bottom -->
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- Supported platforms -->
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="  ·  "
-                android:textColor="@color/textMuted"
-                android:textSize="11sp" />
+                android:layout_marginTop="32dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/bg_pill"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="8dp">
+
+                <TextView
+                    style="@style/PlatformLabel"
+                    android:text="YouTube"
+                    android:textColor="@color/brandYouTube"
+                    tools:ignore="HardcodedText" />
+
+                <TextView
+                    style="@style/PlatformDot"
+                    tools:ignore="HardcodedText" />
+
+                <TextView
+                    style="@style/PlatformLabel"
+                    android:text="X"
+                    android:textColor="@color/brandTwitter"
+                    tools:ignore="HardcodedText" />
+
+                <TextView
+                    style="@style/PlatformDot"
+                    tools:ignore="HardcodedText" />
+
+                <TextView
+                    style="@style/PlatformLabel"
+                    android:text="Instagram"
+                    android:textColor="@color/brandInstagramEnd"
+                    tools:ignore="HardcodedText" />
+
+                <TextView
+                    style="@style/PlatformDot"
+                    tools:ignore="HardcodedText" />
+
+                <TextView
+                    style="@style/PlatformLabel"
+                    android:text="Facebook"
+                    android:textColor="@color/brandFacebook"
+                    tools:ignore="HardcodedText" />
+            </LinearLayout>
 
             <TextView
+                android:id="@+id/tvCreatedBy"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:letterSpacing="0.04"
-                android:text="X"
-                android:textColor="@color/brandTwitter"
-                android:textSize="11sp"
-                android:textStyle="bold" />
+                android:layout_marginBottom="8dp"
+                android:textColor="@color/textSecondary"
+                android:textColorLink="@color/textPrimary"
+                android:textSize="13sp" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="  ·  "
-                android:textColor="@color/textMuted"
-                android:textSize="11sp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:letterSpacing="0.04"
-                android:text="Instagram"
-                android:textColor="@color/brandInstagramEnd"
-                android:textSize="11sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="  ·  "
-                android:textColor="@color/textMuted"
-                android:textSize="11sp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:letterSpacing="0.04"
-                android:text="Facebook"
-                android:textColor="@color/brandFacebook"
-                android:textSize="11sp"
-                android:textStyle="bold" />
         </LinearLayout>
-
-        <TextView
-            android:id="@+id/tvCreatedBy"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:textColor="@color/textSecondary"
-            android:textSize="13sp" />
-
-    </LinearLayout>
-</androidx.core.widget.NestedScrollView>
-
+    </androidx.core.widget.NestedScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
