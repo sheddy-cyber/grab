@@ -81,6 +81,18 @@ def _prepare_cookie_file():
 
 COOKIE_FILE = _prepare_cookie_file()
 
+# Optional outbound proxy for YouTube requests (http://user:pass@host:port or socks5://...).
+# YouTube blocks many datacenter IPs (Render/AWS) with HTTP 429/403; routing through a
+# residential proxy is the reliable fix. Video URLs are tied to the IP that extracted
+# them, so YouTube downloads also go through yt-dlp (/download_merged) with this proxy.
+YTDLP_PROXY = os.environ.get('YTDLP_PROXY', '').strip() or None
+if YTDLP_PROXY:
+    logger.info("yt-dlp will use the proxy from YTDLP_PROXY")
+
+# bgutil PO-token server started by start.sh. The plugin finds it via this extractor arg;
+# it must NOT be passed as `po_token`, which yt-dlp treats as a literal token value.
+BGUTIL_EXTRACTOR_ARGS = {'youtubepot-bgutilhttp': {'base_url': ['http://127.0.0.1:4416']}}
+
 # Cache for cobalt.directory instance list (avoids re-fetching on fallback)
 _cobalt_cache = {'urls': {}, 'ts': 0}
 _COBALT_CACHE_TTL = 300  # seconds — longer TTL to reduce API calls
@@ -487,10 +499,9 @@ def extract_video():
                 'node': {}
             },
             'extractor_args': {
-                'youtube': {
-                    'player_client': ['web', 'tv'],
-                    'po_token': ['web+bgutil_http:base_url=http://127.0.0.1:4416']
-                },
+                # Let yt-dlp pick its default YouTube clients (they adapt to cookies);
+                # PO tokens come from the bgutil server.
+                **BGUTIL_EXTRACTOR_ARGS,
                 'facebook': {
                     'use_graph_api': ['false']
                 },
@@ -507,6 +518,8 @@ def extract_video():
         if COOKIE_FILE:
             ydl_opts['cookiefile'] = COOKIE_FILE
             cookies_loaded = True
+        if YTDLP_PROXY and platform == 'youtube':
+            ydl_opts['proxy'] = YTDLP_PROXY
         
         # Also try browser cookies for platforms that need them (Facebook, Instagram, YouTube)
         # This can be enabled via environment variable
@@ -921,12 +934,9 @@ def download_merged():
     # Inject js_runtimes for YouTube just in case
     if platform == 'youtube':
         ydl_opts['js_runtimes'] = {'node': {}}
-        ydl_opts['extractor_args'] = {
-            'youtube': {
-                'player_client': ['web', 'tv'],
-                'po_token': ['web+bgutil_http:base_url=http://127.0.0.1:4416']
-            }
-        }
+        ydl_opts['extractor_args'] = dict(BGUTIL_EXTRACTOR_ARGS)
+        if YTDLP_PROXY:
+            ydl_opts['proxy'] = YTDLP_PROXY
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:

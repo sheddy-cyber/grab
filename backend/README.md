@@ -96,6 +96,16 @@ It copies them to a private temp file at startup because yt-dlp writes refreshed
 and secret mounts are read-only. The startup log says where the cookies were loaded from.
 Restart the service after changing them.
 
+## YouTube on cloud hosts
+
+YouTube blocks many datacenter IPs (Render, AWS, etc.): logs show `HTTP Error 429` on the
+first webpage request, then `403` on API calls. Cookies alone don't fix that. Set
+`YTDLP_PROXY` (e.g. `http://user:pass@host:port` or `socks5://...`, ideally a residential
+proxy) and YouTube extraction and downloads go through it; other platforms are unaffected.
+
+PO tokens come from the bgutil server that `start.sh` launches on port 4416; yt-dlp finds it
+through the `youtubepot-bgutilhttp` extractor argument.
+
 ## Production Notes
 
 - Add authentication or rate limiting before exposing the backend publicly.
